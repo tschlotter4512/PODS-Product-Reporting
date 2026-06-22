@@ -3,347 +3,87 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OB Performance Dashboard</title>
+<title>Product Reporting</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F4F8;color:#1a1a2e;font-size:13px}
-:root{--navy:#1C3557;--pos:#15803d;--neg:#DC2626;--muted:#6b7280;--border:#e5e7eb;--surface:#fff}
-header{background:var(--navy);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
-header h1{font-size:16px;font-weight:600}
-header span{font-size:12px;opacity:.7}
-.tabs{background:var(--navy);display:flex;padding:0 20px;border-bottom:1px solid rgba(255,255,255,.15)}
-.tab{padding:10px 18px;color:rgba(255,255,255,.65);cursor:pointer;font-size:12px;font-weight:500;border-bottom:2px solid transparent}
-.tab.active{color:#fff;border-bottom-color:#fff}
-.tab:hover:not(.active){color:rgba(255,255,255,.85)}
-.page{display:none;padding:16px 20px}
-.page.active{display:block}
-.controls{display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap}
-.filter-group{display:flex;gap:4px}
-.filter-btn{padding:4px 12px;border:1px solid var(--border);background:var(--surface);border-radius:4px;cursor:pointer;font-size:12px;color:var(--muted)}
-.filter-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
-.week-tabs{display:flex;gap:4px;flex-wrap:wrap}
-.week-btn{padding:4px 10px;border:1px solid var(--border);background:var(--surface);border-radius:4px;cursor:pointer;font-size:11px;color:var(--muted)}
-.week-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
-.ctrl-label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
-.tbl-wrap{overflow-x:auto;border-radius:6px;border:1px solid var(--border);background:var(--surface)}
-table{width:100%;border-collapse:collapse;min-width:960px}
-thead th{background:#F8FAFC;padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;position:sticky;top:0;z-index:1}
-thead th:hover{background:#eef2f7}
-thead th.sorted{color:var(--navy)}
-thead th .sa{opacity:.35;margin-left:2px;font-size:9px}
-thead th.sorted .sa{opacity:1}
-tbody tr{border-bottom:1px solid #F3F4F6}
-tbody tr:hover{background:#FAFBFC}
-td{padding:7px 10px;vertical-align:middle}
-td.name-cell{font-weight:500;white-space:nowrap;font-size:12px;min-width:160px}
-td.metric-cell{text-align:right;min-width:90px}
-.val{font-size:13px;font-weight:500;display:block}
-.sub{font-size:10px;display:flex;gap:5px;justify-content:flex-end;margin-top:1px;align-items:center}
-.chg{font-weight:600;font-size:10px}
-.chg.pos{color:var(--pos)}.chg.neg{color:var(--neg)}.chg.neu{color:#9ca3af}
-.badge{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:700}
-.badge.CLW{background:#1a1a1a;color:#fff}.badge.CNX{background:#CE202F;color:#fff}
-.null-val{color:#d1d5db}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F0F4F8;color:#1a1a2e;min-height:100vh}
+:root{--red:#CE202F;--border:#e5e7eb;--surface:#fff;--muted:#6b7280}
 
-/* ── Summary tab ── */
-.org-banner{background:var(--navy);border-radius:8px;padding:24px 28px;margin-bottom:20px;color:#fff}
-.org-banner-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;opacity:.65;margin-bottom:16px}
-.org-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
-.org-stat{padding:0 28px 0 0;border-right:1px solid rgba(255,255,255,.15)}
-.org-stat:first-child{padding-left:0}
-.org-stat:last-child{border-right:none}
-.org-stat-label{font-size:11px;opacity:.65;margin-bottom:6px;font-weight:500}
-.org-stat-val{font-size:38px;font-weight:700;line-height:1;letter-spacing:-1px}
-.org-stat-sub{font-size:12px;opacity:.55;margin-top:4px}
+header{background:var(--red);padding:20px 40px;display:flex;align-items:center}
+header img{height:36px;display:block}
 
-.group-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-.group-card{background:var(--surface);border-radius:6px;border:1px solid var(--border)}
-.group-card-hdr{padding:10px 14px;font-size:13px;font-weight:600;color:#fff;display:flex;justify-content:space-between;align-items:center;border-radius:6px 6px 0 0}
-.group-card-hdr.CLW{background:#1a1a1a}.group-card-hdr.CNX{background:#CE202F}
-.group-card-hdr span{font-size:11px;font-weight:400;opacity:.75}
-.gtbl-wrap{overflow-x:auto}
-.group-tbl{width:100%;border-collapse:collapse;min-width:320px}
-.group-tbl td,.group-tbl th{padding:6px 12px;font-size:12px}
-.group-tbl th{background:#F8FAFC;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.4px;font-weight:600;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
-.group-tbl th:first-child{text-align:left}
-.group-tbl td{border-bottom:1px solid #F3F4F6;text-align:right}
-.group-tbl td:first-child{text-align:left;font-weight:500;color:#374151}
-.group-tbl tr:last-child td{border:none}
+.container{max-width:900px;margin:40px auto;padding:0 24px}
 
-.scatter-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.chart-card{background:var(--surface);border-radius:6px;border:1px solid var(--border);padding:14px}
-.chart-title{font-size:12px;font-weight:600;color:#374151;margin-bottom:6px}
-.chart-legend{display:flex;gap:14px;margin-bottom:8px;font-size:11px;color:var(--muted)}
-.ldot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle}
-.divider{height:1px;background:var(--border);margin:16px 0}
-canvas{display:block;width:100%;cursor:crosshair}
-.tooltip{position:fixed;background:#1C3557;color:#fff;padding:5px 10px;border-radius:4px;font-size:11px;pointer-events:none;display:none;z-index:999}
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:14px}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:40px}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:22px 24px;text-decoration:none;color:inherit;display:block;transition:box-shadow .15s,transform .15s}
+.card:hover{box-shadow:0 4px 16px rgba(0,0,0,.08);transform:translateY(-2px)}
+.card.coming-soon{opacity:.55;cursor:default;pointer-events:none}
+
+.card-icon{width:36px;height:36px;border-radius:6px;background:var(--red);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.card-icon svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+.card-title{font-size:14px;font-weight:600;color:#111827;margin-bottom:4px}
+.card-desc{font-size:12px;color:var(--muted);line-height:1.5}
+
+.badge{display:inline-block;margin-top:10px;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:700;background:#F3F4F6;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.badge.live{background:#dcfce7;color:#15803d}
+
+footer{text-align:center;padding:32px;font-size:11px;color:#9ca3af}
 </style>
 </head>
 <body>
-<div class="tooltip" id="tip"></div>
+
 <header>
-  <h1>OB Performance Dashboard</h1>
-  <span id="hdr-week"></span>
+  <img src="data:image/png;base64,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" alt="PODS">
 </header>
-<div class="tabs">
-  <div class="tab active" data-tab="summary">Summary</div>
-  <div class="tab" data-tab="agents">By Agent</div>
-</div>
 
-<!-- BY AGENT -->
-<div id="agents-page" class="page">
-  <div class="controls">
-    <div style="display:flex;align-items:center;gap:6px">
-      <span class="ctrl-label">Group</span>
-      <div class="filter-group">
-        <button class="filter-btn active" data-grp="ALL">All</button>
-        <button class="filter-btn" data-grp="CLW">CLW</button>
-        <button class="filter-btn" data-grp="CNX">CNX</button>
+<div class="container">
+  <div class="section-label">Dashboards</div>
+  <div class="grid">
+
+    <div class="card coming-soon">
+      <div class="card-icon" style="background:#9ca3af">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       </div>
+      <div class="card-title">Product Revenue Report</div>
+      <div class="card-desc">Revenue reporting by product line. In development.</div>
+      <span class="badge">Coming Soon</span>
     </div>
-    <div style="display:flex;align-items:center;gap:6px">
-      <span class="ctrl-label">Week</span>
-      <div id="week-selector" class="week-tabs"></div>
-    </div>
-  </div>
-  <div class="tbl-wrap">
-    <table><thead id="agent-thead"></thead><tbody id="agent-tbody"></tbody></table>
-  </div>
-</div>
 
-<!-- SUMMARY -->
-<div id="summary-page" class="page active">
-  <div class="controls">
-    <div style="display:flex;align-items:center;gap:6px">
-      <span class="ctrl-label">Week</span>
-      <div id="sum-week-selector" class="week-tabs"></div>
-    </div>
-  </div>
-
-  <!-- Org totals banner -->
-  <div class="org-banner" id="org-banner"></div>
-
-  <!-- By group cards -->
-  <div class="group-grid" id="group-cards"></div>
-
-  <div class="divider"></div>
-
-  <!-- Scatter plots -->
-  <div class="scatter-row">
-    <div class="chart-card">
-      <div class="chart-title" id="scat-pri-title"></div>
-      <div class="chart-legend">
-        <span><span class="ldot" style="background:#1a1a1a"></span>CLW</span>
-        <span><span class="ldot" style="background:#CE202F"></span>CNX</span>
-        <span style="font-size:10px;color:#9ca3af;margin-left:4px">X=Conv%  Y=Calls/Opp</span>
+    <a href="OB_Performance_Dashboard.html" class="card">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       </div>
-      <canvas id="scat-pri" height="300"></canvas>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title" id="scat-cur-title"></div>
-      <div class="chart-legend">
-        <span><span class="ldot" style="background:#1a1a1a"></span>CLW</span>
-        <span><span class="ldot" style="background:#CE202F"></span>CNX</span>
-        <span style="font-size:10px;color:#9ca3af;margin-left:4px">X=Conv%  Y=Calls/Opp</span>
+      <div class="card-title">OB Performance Dashboard</div>
+      <div class="card-desc">Outbound agent performance by week — opportunities, containers, conversion, calls per opp, and 7-day cancel rate.</div>
+      <span class="badge live">Live</span>
+    </a>
+
+    <a href="Chat_Dashboard.html" class="card">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       </div>
-      <canvas id="scat-cur" height="300"></canvas>
-    </div>
+      <div class="card-title">Chat Dashboard</div>
+      <div class="card-desc">Chat channel performance metrics and weekly trends.</div>
+      <span class="badge live">Live</span>
+    </a>
+
+    <a href="IL_Dashboard.html" class="card">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      </div>
+      <div class="card-title">Integrated Labor Dashboard</div>
+      <div class="card-desc">Integrated labor reporting across teams and channels.</div>
+      <span class="badge live">Live</span>
+    </a>
+
   </div>
 </div>
 
-<script>
-const D={"W71":{"num":71,"date":"5/4\u20135/10","agents":[{"name":"Sandra Haun","group":"CLW","opps":229,"ob_calls":476,"ib_calls":25,"containers":12,"calls_per_opp":2.1878,"conversion":5.24,"cancel_7d":null},{"name":"Frederick Hutchinson","group":"CLW","opps":178,"ob_calls":207,"ib_calls":4,"containers":12,"calls_per_opp":1.1854,"conversion":6.74,"cancel_7d":null},{"name":"Christopher Monaldi","group":"CLW","opps":253,"ob_calls":318,"ib_calls":3,"containers":15,"calls_per_opp":1.2688,"conversion":5.93,"cancel_7d":null},{"name":"Michael Petersen","group":"CLW","opps":186,"ob_calls":192,"ib_calls":10,"containers":23,"calls_per_opp":1.086,"conversion":12.37,"cancel_7d":null},{"name":"Matthew Floming","group":"CLW","opps":188,"ob_calls":210,"ib_calls":20,"containers":18,"calls_per_opp":1.2234,"conversion":9.57,"cancel_7d":null},{"name":"Ivy Fichtl","group":"CLW","opps":164,"ob_calls":284,"ib_calls":1,"containers":6,"calls_per_opp":1.7378,"conversion":3.66,"cancel_7d":null},{"name":"Richard Stoffregen","group":"CLW","opps":227,"ob_calls":255,"ib_calls":8,"containers":34,"calls_per_opp":1.1586,"conversion":14.98,"cancel_7d":null},{"name":"Dawn Carreiro","group":"CLW","opps":185,"ob_calls":192,"ib_calls":11,"containers":9,"calls_per_opp":1.0973,"conversion":4.86,"cancel_7d":null},{"name":"Christina Morales","group":"CLW","opps":158,"ob_calls":110,"ib_calls":7,"containers":25,"calls_per_opp":0.7405,"conversion":15.82,"cancel_7d":null},{"name":"Kimberly Hewitt","group":"CLW","opps":188,"ob_calls":280,"ib_calls":22,"containers":19,"calls_per_opp":1.6064,"conversion":10.11,"cancel_7d":null},{"name":"Dale Besida","group":"CLW","opps":194,"ob_calls":219,"ib_calls":8,"containers":20,"calls_per_opp":1.1701,"conversion":10.31,"cancel_7d":null},{"name":"Erik Goldring","group":"CLW","opps":191,"ob_calls":166,"ib_calls":11,"containers":17,"calls_per_opp":0.9267,"conversion":8.9,"cancel_7d":null},{"name":"Rene Dunn","group":"CLW","opps":179,"ob_calls":134,"ib_calls":2,"containers":14,"calls_per_opp":0.7598,"conversion":7.82,"cancel_7d":null},{"name":"Charmaine Bacay","group":"CNX","opps":197,"ob_calls":381,"ib_calls":4,"containers":19,"calls_per_opp":1.9543,"conversion":9.64,"cancel_7d":null},{"name":"Edison Viray","group":"CNX","opps":170,"ob_calls":437,"ib_calls":10,"containers":24,"calls_per_opp":2.6294,"conversion":14.12,"cancel_7d":null},{"name":"Gimarie Barastas","group":"CNX","opps":204,"ob_calls":338,"ib_calls":4,"containers":14,"calls_per_opp":1.6765,"conversion":6.86,"cancel_7d":null},{"name":"Jerico Galve","group":"CNX","opps":170,"ob_calls":305,"ib_calls":2,"containers":14,"calls_per_opp":1.8059,"conversion":8.24,"cancel_7d":null},{"name":"Cristal Apple Barredo","group":"CNX","opps":148,"ob_calls":426,"ib_calls":11,"containers":21,"calls_per_opp":2.9527,"conversion":14.19,"cancel_7d":null},{"name":"Jessa Rey Belotindos","group":"CNX","opps":208,"ob_calls":289,"ib_calls":3,"containers":13,"calls_per_opp":1.4038,"conversion":6.25,"cancel_7d":null},{"name":"Lienard Bryan Organo","group":"CNX","opps":146,"ob_calls":286,"ib_calls":6,"containers":23,"calls_per_opp":2.0,"conversion":15.75,"cancel_7d":null},{"name":"Sendy Firmalino","group":"CNX","opps":208,"ob_calls":297,"ib_calls":3,"containers":14,"calls_per_opp":1.4423,"conversion":6.73,"cancel_7d":null},{"name":"Ednalyn Mirandilla","group":"CNX","opps":183,"ob_calls":479,"ib_calls":2,"containers":10,"calls_per_opp":2.6284,"conversion":5.46,"cancel_7d":null},{"name":"Hannay Lozano","group":"CNX","opps":181,"ob_calls":357,"ib_calls":4,"containers":25,"calls_per_opp":1.9945,"conversion":13.81,"cancel_7d":null},{"name":"Ferdinand Carlo Caete","group":"CNX","opps":167,"ob_calls":347,"ib_calls":2,"containers":18,"calls_per_opp":2.0898,"conversion":10.78,"cancel_7d":null},{"name":"Eumarbel Dionglay","group":"CNX","opps":195,"ob_calls":265,"ib_calls":6,"containers":30,"calls_per_opp":1.3897,"conversion":15.38,"cancel_7d":null},{"name":"Milkos Malcolm Orven Miguel","group":"CNX","opps":180,"ob_calls":162,"ib_calls":2,"containers":19,"calls_per_opp":0.9111,"conversion":10.56,"cancel_7d":null},{"name":"Jan Malvin Molina","group":"CNX","opps":171,"ob_calls":225,"ib_calls":3,"containers":16,"calls_per_opp":1.3333,"conversion":9.36,"cancel_7d":null},{"name":"May Anthonette Clavel","group":"CNX","opps":167,"ob_calls":294,"ib_calls":4,"containers":11,"calls_per_opp":1.7844,"conversion":6.59,"cancel_7d":null},{"name":"Marielle Coleen Placido","group":"CNX","opps":195,"ob_calls":338,"ib_calls":7,"containers":15,"calls_per_opp":1.7692,"conversion":7.69,"cancel_7d":null},{"name":"Jake Russel Bernardino","group":"CNX","opps":206,"ob_calls":286,"ib_calls":7,"containers":16,"calls_per_opp":1.4223,"conversion":7.77,"cancel_7d":null},{"name":"Marijoh Mae Lee","group":"CNX","opps":186,"ob_calls":206,"ib_calls":4,"containers":29,"calls_per_opp":1.129,"conversion":15.59,"cancel_7d":null},{"name":"Jesse Vergara Jr","group":"CNX","opps":201,"ob_calls":229,"ib_calls":6,"containers":13,"calls_per_opp":1.1692,"conversion":6.47,"cancel_7d":null},{"name":"ERWIN CABLAO","group":"CNX","opps":161,"ob_calls":209,"ib_calls":4,"containers":15,"calls_per_opp":1.323,"conversion":9.32,"cancel_7d":null},{"name":"Shella Marie Francisco","group":"CNX","opps":205,"ob_calls":245,"ib_calls":3,"containers":17,"calls_per_opp":1.2098,"conversion":8.29,"cancel_7d":null},{"name":"Aldwin Navarro","group":"CNX","opps":217,"ob_calls":297,"ib_calls":2,"containers":11,"calls_per_opp":1.3779,"conversion":5.07,"cancel_7d":null},{"name":"James Rebualos","group":"CNX","opps":216,"ob_calls":271,"ib_calls":7,"containers":22,"calls_per_opp":1.287,"conversion":10.19,"cancel_7d":null},{"name":"Thaddaeus Paulo Malig","group":"CNX","opps":197,"ob_calls":258,"ib_calls":4,"containers":14,"calls_per_opp":1.3299,"conversion":7.11,"cancel_7d":null},{"name":"Brian Valdez","group":"CNX","opps":199,"ob_calls":197,"ib_calls":6,"containers":23,"calls_per_opp":1.0201,"conversion":11.56,"cancel_7d":null},{"name":"Irish Verona","group":"CNX","opps":157,"ob_calls":14,"ib_calls":9,"containers":20,"calls_per_opp":0.1465,"conversion":12.74,"cancel_7d":null},{"name":"Jerome Roger Rosites","group":"CNX","opps":192,"ob_calls":17,"ib_calls":8,"containers":26,"calls_per_opp":0.1302,"conversion":13.54,"cancel_7d":null},{"name":"Ivan Marc Lanestosa","group":"CNX","opps":188,"ob_calls":132,"ib_calls":2,"containers":9,"calls_per_opp":0.7128,"conversion":4.79,"cancel_7d":null},{"name":"Christian Jerick Sanchez","group":"CNX","opps":167,"ob_calls":null,"ib_calls":null,"containers":12,"calls_per_opp":null,"conversion":7.19,"cancel_7d":null},{"name":"John Rick Elumba","group":"CNX","opps":null,"ob_calls":null,"ib_calls":null,"containers":null,"calls_per_opp":null,"conversion":null,"cancel_7d":null}]},"W72":{"num":72,"date":"5/11\u20135/17","agents":[{"name":"Sandra Haun","group":"CLW","opps":228,"ob_calls":315,"ib_calls":19,"containers":21,"calls_per_opp":1.4649,"conversion":9.21,"cancel_7d":null},{"name":"Frederick Hutchinson","group":"CLW","opps":221,"ob_calls":264,"ib_calls":5,"containers":25,"calls_per_opp":1.2172,"conversion":11.31,"cancel_7d":null},{"name":"Christopher Monaldi","group":"CLW","opps":213,"ob_calls":282,"ib_calls":8,"containers":19,"calls_per_opp":1.3615,"conversion":8.92,"cancel_7d":null},{"name":"Michael Petersen","group":"CLW","opps":159,"ob_calls":171,"ib_calls":14,"containers":35,"calls_per_opp":1.1635,"conversion":22.01,"cancel_7d":null},{"name":"Matthew Floming","group":"CLW","opps":189,"ob_calls":240,"ib_calls":19,"containers":21,"calls_per_opp":1.3704,"conversion":11.11,"cancel_7d":null},{"name":"Ivy Fichtl","group":"CLW","opps":211,"ob_calls":286,"ib_calls":10,"containers":16,"calls_per_opp":1.4028,"conversion":7.58,"cancel_7d":null},{"name":"Richard Stoffregen","group":"CLW","opps":236,"ob_calls":299,"ib_calls":9,"containers":29,"calls_per_opp":1.3051,"conversion":12.29,"cancel_7d":null},{"name":"Dawn Carreiro","group":"CLW","opps":201,"ob_calls":182,"ib_calls":20,"containers":21,"calls_per_opp":1.005,"conversion":10.45,"cancel_7d":null},{"name":"Christina Morales","group":"CLW","opps":163,"ob_calls":164,"ib_calls":11,"containers":27,"calls_per_opp":1.0736,"conversion":16.56,"cancel_7d":null},{"name":"Kimberly Hewitt","group":"CLW","opps":208,"ob_calls":215,"ib_calls":22,"containers":34,"calls_per_opp":1.1394,"conversion":16.35,"cancel_7d":null},{"name":"Dale Besida","group":"CLW","opps":189,"ob_calls":268,"ib_calls":13,"containers":16,"calls_per_opp":1.4868,"conversion":8.47,"cancel_7d":null},{"name":"Erik Goldring","group":"CLW","opps":166,"ob_calls":144,"ib_calls":15,"containers":23,"calls_per_opp":0.9578,"conversion":13.86,"cancel_7d":null},{"name":"Rene Dunn","group":"CLW","opps":155,"ob_calls":179,"ib_calls":null,"containers":15,"calls_per_opp":null,"conversion":9.68,"cancel_7d":null},{"name":"Charmaine Bacay","group":"CNX","opps":148,"ob_calls":415,"ib_calls":6,"containers":25,"calls_per_opp":2.8446,"conversion":16.89,"cancel_7d":null},{"name":"Edison Viray","group":"CNX","opps":201,"ob_calls":539,"ib_calls":7,"containers":24,"calls_per_opp":2.7164,"conversion":11.94,"cancel_7d":null},{"name":"Gimarie Barastas","group":"CNX","opps":206,"ob_calls":444,"ib_calls":1,"containers":15,"calls_per_opp":2.1602,"conversion":7.28,"cancel_7d":null},{"name":"Jerico Galve","group":"CNX","opps":169,"ob_calls":343,"ib_calls":3,"containers":19,"calls_per_opp":2.0473,"conversion":11.24,"cancel_7d":null},{"name":"Cristal Apple Barredo","group":"CNX","opps":164,"ob_calls":346,"ib_calls":7,"containers":11,"calls_per_opp":2.1524,"conversion":6.71,"cancel_7d":null},{"name":"Jessa Rey Belotindos","group":"CNX","opps":205,"ob_calls":352,"ib_calls":15,"containers":22,"calls_per_opp":1.7902,"conversion":10.73,"cancel_7d":null},{"name":"Lienard Bryan Organo","group":"CNX","opps":190,"ob_calls":459,"ib_calls":13,"containers":13,"calls_per_opp":2.4842,"conversion":6.84,"cancel_7d":null},{"name":"Sendy Firmalino","group":"CNX","opps":214,"ob_calls":487,"ib_calls":11,"containers":23,"calls_per_opp":2.3271,"conversion":10.75,"cancel_7d":null},{"name":"Ednalyn Mirandilla","group":"CNX","opps":196,"ob_calls":566,"ib_calls":18,"containers":17,"calls_per_opp":2.9796,"conversion":8.67,"cancel_7d":null},{"name":"Hannay Lozano","group":"CNX","opps":207,"ob_calls":414,"ib_calls":6,"containers":21,"calls_per_opp":2.029,"conversion":10.14,"cancel_7d":null},{"name":"Ferdinand Carlo Caete","group":"CNX","opps":177,"ob_calls":382,"ib_calls":10,"containers":17,"calls_per_opp":2.2147,"conversion":9.6,"cancel_7d":null},{"name":"Eumarbel Dionglay","group":"CNX","opps":196,"ob_calls":279,"ib_calls":4,"containers":23,"calls_per_opp":1.4439,"conversion":11.73,"cancel_7d":null},{"name":"Milkos Malcolm Orven Miguel","group":"CNX","opps":264,"ob_calls":352,"ib_calls":11,"containers":23,"calls_per_opp":1.375,"conversion":8.71,"cancel_7d":null},{"name":"Jan Malvin Molina","group":"CNX","opps":193,"ob_calls":347,"ib_calls":1,"containers":23,"calls_per_opp":1.8031,"conversion":11.92,"cancel_7d":null},{"name":"May Anthonette Clavel","group":"CNX","opps":154,"ob_calls":338,"ib_calls":9,"containers":20,"calls_per_opp":2.2532,"conversion":12.99,"cancel_7d":null},{"name":"Marielle Coleen Placido","group":"CNX","opps":204,"ob_calls":391,"ib_calls":8,"containers":12,"calls_per_opp":1.9559,"conversion":5.88,"cancel_7d":null},{"name":"Jake Russel Bernardino","group":"CNX","opps":154,"ob_calls":255,"ib_calls":2,"containers":14,"calls_per_opp":1.6688,"conversion":9.09,"cancel_7d":null},{"name":"Marijoh Mae Lee","group":"CNX","opps":206,"ob_calls":296,"ib_calls":2,"containers":26,"calls_per_opp":1.4466,"conversion":12.62,"cancel_7d":null},{"name":"Jesse Vergara Jr","group":"CNX","opps":180,"ob_calls":307,"ib_calls":5,"containers":9,"calls_per_opp":1.7333,"conversion":5.0,"cancel_7d":null},{"name":"ERWIN CABLAO","group":"CNX","opps":236,"ob_calls":310,"ib_calls":4,"containers":8,"calls_per_opp":1.3305,"conversion":3.39,"cancel_7d":null},{"name":"Shella Marie Francisco","group":"CNX","opps":224,"ob_calls":262,"ib_calls":8,"containers":28,"calls_per_opp":1.2054,"conversion":12.5,"cancel_7d":null},{"name":"Aldwin Navarro","group":"CNX","opps":193,"ob_calls":390,"ib_calls":null,"containers":8,"calls_per_opp":null,"conversion":4.15,"cancel_7d":null},{"name":"James Rebualos","group":"CNX","opps":213,"ob_calls":339,"ib_calls":2,"containers":13,"calls_per_opp":1.6009,"conversion":6.1,"cancel_7d":null},{"name":"Thaddaeus Paulo Malig","group":"CNX","opps":205,"ob_calls":238,"ib_calls":6,"containers":15,"calls_per_opp":1.1902,"conversion":7.32,"cancel_7d":null},{"name":"Brian Valdez","group":"CNX","opps":202,"ob_calls":281,"ib_calls":7,"containers":25,"calls_per_opp":1.4257,"conversion":12.38,"cancel_7d":null},{"name":"Irish Verona","group":"CNX","opps":134,"ob_calls":3,"ib_calls":7,"containers":6,"calls_per_opp":0.0746,"conversion":4.48,"cancel_7d":null},{"name":"Jerome Roger Rosites","group":"CNX","opps":217,"ob_calls":11,"ib_calls":3,"containers":13,"calls_per_opp":0.0645,"conversion":5.99,"cancel_7d":null},{"name":"Ivan Marc Lanestosa","group":"CNX","opps":125,"ob_calls":3,"ib_calls":null,"containers":14,"calls_per_opp":null,"conversion":11.2,"cancel_7d":null},{"name":"Christian Jerick Sanchez","group":"CNX","opps":140,"ob_calls":null,"ib_calls":null,"containers":8,"calls_per_opp":null,"conversion":5.71,"cancel_7d":null},{"name":"John Rick Elumba","group":"CNX","opps":null,"ob_calls":null,"ib_calls":null,"containers":null,"calls_per_opp":null,"conversion":null,"cancel_7d":null}]},"W73":{"num":73,"date":"5/18\u20135/24","agents":[{"name":"Sandra Haun","group":"CLW","opps":179,"ob_calls":288,"ib_calls":13,"containers":20,"calls_per_opp":1.6816,"conversion":11.17,"cancel_7d":null},{"name":"Frederick Hutchinson","group":"CLW","opps":213,"ob_calls":326,"ib_calls":8,"containers":29,"calls_per_opp":1.5681,"conversion":13.62,"cancel_7d":null},{"name":"Christopher Monaldi","group":"CLW","opps":207,"ob_calls":299,"ib_calls":6,"containers":16,"calls_per_opp":1.4734,"conversion":7.73,"cancel_7d":null},{"name":"Michael Petersen","group":"CLW","opps":207,"ob_calls":239,"ib_calls":11,"containers":20,"calls_per_opp":1.2077,"conversion":9.66,"cancel_7d":null},{"name":"Matthew Floming","group":"CLW","opps":212,"ob_calls":233,"ib_calls":20,"containers":24,"calls_per_opp":1.1934,"conversion":11.32,"cancel_7d":null},{"name":"Ivy Fichtl","group":"CLW","opps":229,"ob_calls":265,"ib_calls":3,"containers":15,"calls_per_opp":1.1703,"conversion":6.55,"cancel_7d":null},{"name":"Richard Stoffregen","group":"CLW","opps":262,"ob_calls":288,"ib_calls":11,"containers":22,"calls_per_opp":1.1412,"conversion":8.4,"cancel_7d":null},{"name":"Dawn Carreiro","group":"CLW","opps":192,"ob_calls":200,"ib_calls":11,"containers":18,"calls_per_opp":1.099,"conversion":9.38,"cancel_7d":null},{"name":"Christina Morales","group":"CLW","opps":131,"ob_calls":128,"ib_calls":12,"containers":11,"calls_per_opp":1.0687,"conversion":8.4,"cancel_7d":null},{"name":"Kimberly Hewitt","group":"CLW","opps":188,"ob_calls":160,"ib_calls":28,"containers":27,"calls_per_opp":1.0,"conversion":14.36,"cancel_7d":null},{"name":"Dale Besida","group":"CLW","opps":227,"ob_calls":215,"ib_calls":9,"containers":25,"calls_per_opp":0.9868,"conversion":11.01,"cancel_7d":null},{"name":"Erik Goldring","group":"CLW","opps":192,"ob_calls":164,"ib_calls":15,"containers":28,"calls_per_opp":0.9323,"conversion":14.58,"cancel_7d":null},{"name":"Rene Dunn","group":"CLW","opps":157,"ob_calls":154,"ib_calls":1,"containers":23,"calls_per_opp":0.9873,"conversion":14.65,"cancel_7d":null},{"name":"Charmaine Bacay","group":"CNX","opps":197,"ob_calls":651,"ib_calls":11,"containers":46,"calls_per_opp":3.3604,"conversion":23.35,"cancel_7d":null},{"name":"Edison Viray","group":"CNX","opps":169,"ob_calls":488,"ib_calls":9,"containers":33,"calls_per_opp":2.9408,"conversion":19.53,"cancel_7d":null},{"name":"Gimarie Barastas","group":"CNX","opps":96,"ob_calls":265,"ib_calls":8,"containers":17,"calls_per_opp":2.8438,"conversion":17.71,"cancel_7d":null},{"name":"Jerico Galve","group":"CNX","opps":143,"ob_calls":356,"ib_calls":6,"containers":21,"calls_per_opp":2.5315,"conversion":14.69,"cancel_7d":null},{"name":"Cristal Apple Barredo","group":"CNX","opps":177,"ob_calls":434,"ib_calls":3,"containers":20,"calls_per_opp":2.4689,"conversion":11.3,"cancel_7d":null},{"name":"Jessa Rey Belotindos","group":"CNX","opps":135,"ob_calls":299,"ib_calls":12,"containers":17,"calls_per_opp":2.3037,"conversion":12.59,"cancel_7d":null},{"name":"Lienard Bryan Organo","group":"CNX","opps":167,"ob_calls":304,"ib_calls":6,"containers":41,"calls_per_opp":1.8563,"conversion":24.55,"cancel_7d":null},{"name":"Sendy Firmalino","group":"CNX","opps":206,"ob_calls":378,"ib_calls":1,"containers":21,"calls_per_opp":1.8398,"conversion":10.19,"cancel_7d":null},{"name":"Ednalyn Mirandilla","group":"CNX","opps":207,"ob_calls":369,"ib_calls":11,"containers":17,"calls_per_opp":1.8357,"conversion":8.21,"cancel_7d":null},{"name":"Hannay Lozano","group":"CNX","opps":197,"ob_calls":351,"ib_calls":7,"containers":28,"calls_per_opp":1.8173,"conversion":14.21,"cancel_7d":null},{"name":"Ferdinand Carlo Caete","group":"CNX","opps":177,"ob_calls":310,"ib_calls":2,"containers":21,"calls_per_opp":1.7627,"conversion":11.86,"cancel_7d":null},{"name":"Eumarbel Dionglay","group":"CNX","opps":211,"ob_calls":361,"ib_calls":5,"containers":27,"calls_per_opp":1.7346,"conversion":12.8,"cancel_7d":null},{"name":"Milkos Malcolm Orven Miguel","group":"CNX","opps":198,"ob_calls":317,"ib_calls":7,"containers":34,"calls_per_opp":1.6364,"conversion":17.17,"cancel_7d":null},{"name":"Jan Malvin Molina","group":"CNX","opps":202,"ob_calls":317,"ib_calls":6,"containers":24,"calls_per_opp":1.599,"conversion":11.88,"cancel_7d":null},{"name":"May Anthonette Clavel","group":"CNX","opps":185,"ob_calls":268,"ib_calls":10,"containers":26,"calls_per_opp":1.5027,"conversion":14.05,"cancel_7d":null},{"name":"Marielle Coleen Placido","group":"CNX","opps":223,"ob_calls":319,"ib_calls":2,"containers":20,"calls_per_opp":1.4395,"conversion":8.97,"cancel_7d":null},{"name":"Jake Russel Bernardino","group":"CNX","opps":202,"ob_calls":275,"ib_calls":7,"containers":19,"calls_per_opp":1.396,"conversion":9.41,"cancel_7d":null},{"name":"Marijoh Mae Lee","group":"CNX","opps":210,"ob_calls":284,"ib_calls":3,"containers":26,"calls_per_opp":1.3667,"conversion":12.38,"cancel_7d":null},{"name":"Jesse Vergara Jr","group":"CNX","opps":168,"ob_calls":219,"ib_calls":9,"containers":14,"calls_per_opp":1.3571,"conversion":8.33,"cancel_7d":null},{"name":"ERWIN CABLAO","group":"CNX","opps":124,"ob_calls":162,"ib_calls":3,"containers":17,"calls_per_opp":1.3306,"conversion":13.71,"cancel_7d":null},{"name":"Shella Marie Francisco","group":"CNX","opps":190,"ob_calls":243,"ib_calls":2,"containers":37,"calls_per_opp":1.2895,"conversion":19.47,"cancel_7d":null},{"name":"Aldwin Navarro","group":"CNX","opps":235,"ob_calls":296,"ib_calls":null,"containers":10,"calls_per_opp":null,"conversion":4.26,"cancel_7d":null},{"name":"James Rebualos","group":"CNX","opps":172,"ob_calls":207,"ib_calls":3,"containers":17,"calls_per_opp":1.2209,"conversion":9.88,"cancel_7d":null},{"name":"Thaddaeus Paulo Malig","group":"CNX","opps":205,"ob_calls":192,"ib_calls":9,"containers":25,"calls_per_opp":0.9805,"conversion":12.2,"cancel_7d":null},{"name":"Brian Valdez","group":"CNX","opps":232,"ob_calls":222,"ib_calls":3,"containers":32,"calls_per_opp":0.9698,"conversion":13.79,"cancel_7d":null},{"name":"Irish Verona","group":"CNX","opps":151,"ob_calls":68,"ib_calls":6,"containers":32,"calls_per_opp":0.4901,"conversion":21.19,"cancel_7d":null},{"name":"Jerome Roger Rosites","group":"CNX","opps":200,"ob_calls":41,"ib_calls":9,"containers":32,"calls_per_opp":0.25,"conversion":16.0,"cancel_7d":null},{"name":"Ivan Marc Lanestosa","group":"CNX","opps":125,"ob_calls":null,"ib_calls":null,"containers":5,"calls_per_opp":null,"conversion":4.0,"cancel_7d":null},{"name":"Christian Jerick Sanchez","group":"CNX","opps":161,"ob_calls":null,"ib_calls":1,"containers":17,"calls_per_opp":null,"conversion":10.56,"cancel_7d":null},{"name":"John Rick Elumba","group":"CNX","opps":175,"ob_calls":196,"ib_calls":4,"containers":15,"calls_per_opp":1.1429,"conversion":8.57,"cancel_7d":null}]},"W74":{"num":74,"date":"5/25\u20135/31","agents":[{"name":"Sandra Haun","group":"CLW","opps":229,"ob_calls":321,"ib_calls":15,"containers":15,"calls_per_opp":1.4672,"conversion":6.55,"cancel_7d":null},{"name":"Frederick Hutchinson","group":"CLW","opps":223,"ob_calls":239,"ib_calls":null,"containers":12,"calls_per_opp":null,"conversion":5.38,"cancel_7d":null},{"name":"Christopher Monaldi","group":"CLW","opps":214,"ob_calls":183,"ib_calls":5,"containers":18,"calls_per_opp":0.8785,"conversion":8.41,"cancel_7d":null},{"name":"Michael Petersen","group":"CLW","opps":131,"ob_calls":207,"ib_calls":12,"containers":18,"calls_per_opp":1.6718,"conversion":13.74,"cancel_7d":null},{"name":"Matthew Floming","group":"CLW","opps":175,"ob_calls":194,"ib_calls":6,"containers":13,"calls_per_opp":1.1429,"conversion":7.43,"cancel_7d":null},{"name":"Ivy Fichtl","group":"CLW","opps":158,"ob_calls":257,"ib_calls":3,"containers":10,"calls_per_opp":1.6456,"conversion":6.33,"cancel_7d":null},{"name":"Richard Stoffregen","group":"CLW","opps":243,"ob_calls":264,"ib_calls":12,"containers":5,"calls_per_opp":1.1358,"conversion":2.06,"cancel_7d":null},{"name":"Dawn Carreiro","group":"CLW","opps":182,"ob_calls":217,"ib_calls":20,"containers":26,"calls_per_opp":1.3022,"conversion":14.29,"cancel_7d":null},{"name":"Christina Morales","group":"CLW","opps":102,"ob_calls":142,"ib_calls":5,"containers":20,"calls_per_opp":1.4412,"conversion":19.61,"cancel_7d":null},{"name":"Kimberly Hewitt","group":"CLW","opps":184,"ob_calls":201,"ib_calls":13,"containers":15,"calls_per_opp":1.163,"conversion":8.15,"cancel_7d":null},{"name":"Dale Besida","group":"CLW","opps":175,"ob_calls":252,"ib_calls":17,"containers":18,"calls_per_opp":1.5371,"conversion":10.29,"cancel_7d":null},{"name":"Erik Goldring","group":"CLW","opps":155,"ob_calls":108,"ib_calls":10,"containers":31,"calls_per_opp":0.7613,"conversion":20.0,"cancel_7d":null},{"name":"Rene Dunn","group":"CLW","opps":109,"ob_calls":127,"ib_calls":1,"containers":21,"calls_per_opp":1.1743,"conversion":19.27,"cancel_7d":null},{"name":"Charmaine Bacay","group":"CNX","opps":137,"ob_calls":558,"ib_calls":10,"containers":41,"calls_per_opp":4.146,"conversion":29.93,"cancel_7d":null},{"name":"Edison Viray","group":"CNX","opps":162,"ob_calls":223,"ib_calls":10,"containers":7,"calls_per_opp":1.4383,"conversion":4.32,"cancel_7d":null},{"name":"Gimarie Barastas","group":"CNX","opps":224,"ob_calls":404,"ib_calls":1,"containers":14,"calls_per_opp":1.808,"conversion":6.25,"cancel_7d":null},{"name":"Jerico Galve","group":"CNX","opps":157,"ob_calls":444,"ib_calls":7,"containers":13,"calls_per_opp":2.8726,"conversion":8.28,"cancel_7d":null},{"name":"Cristal Apple Barredo","group":"CNX","opps":149,"ob_calls":304,"ib_calls":8,"containers":6,"calls_per_opp":2.094,"conversion":4.03,"cancel_7d":null},{"name":"Jessa Rey Belotindos","group":"CNX","opps":181,"ob_calls":261,"ib_calls":6,"containers":14,"calls_per_opp":1.4751,"conversion":7.73,"cancel_7d":null},{"name":"Lienard Bryan Organo","group":"CNX","opps":184,"ob_calls":157,"ib_calls":4,"containers":8,"calls_per_opp":0.875,"conversion":4.35,"cancel_7d":null},{"name":"Sendy Firmalino","group":"CNX","opps":202,"ob_calls":442,"ib_calls":15,"containers":16,"calls_per_opp":2.2624,"conversion":7.92,"cancel_7d":null},{"name":"Ednalyn Mirandilla","group":"CNX","opps":162,"ob_calls":492,"ib_calls":7,"containers":24,"calls_per_opp":3.0802,"conversion":14.81,"cancel_7d":null},{"name":"Hannay Lozano","group":"CNX","opps":223,"ob_calls":380,"ib_calls":2,"containers":20,"calls_per_opp":1.713,"conversion":8.97,"cancel_7d":null},{"name":"Ferdinand Carlo Caete","group":"CNX","opps":146,"ob_calls":373,"ib_calls":2,"containers":23,"calls_per_opp":2.5685,"conversion":15.75,"cancel_7d":null},{"name":"Eumarbel Dionglay","group":"CNX","opps":199,"ob_calls":352,"ib_calls":12,"containers":27,"calls_per_opp":1.8291,"conversion":13.57,"cancel_7d":null},{"name":"Milkos Malcolm Orven Miguel","group":"CNX","opps":263,"ob_calls":239,"ib_calls":9,"containers":16,"calls_per_opp":0.943,"conversion":6.08,"cancel_7d":null},{"name":"Jan Malvin Molina","group":"CNX","opps":198,"ob_calls":308,"ib_calls":2,"containers":13,"calls_per_opp":1.5657,"conversion":6.57,"cancel_7d":null},{"name":"May Anthonette Clavel","group":"CNX","opps":105,"ob_calls":243,"ib_calls":8,"containers":24,"calls_per_opp":2.3905,"conversion":22.86,"cancel_7d":null},{"name":"Marielle Coleen Placido","group":"CNX","opps":186,"ob_calls":172,"ib_calls":2,"containers":10,"calls_per_opp":0.9355,"conversion":5.38,"cancel_7d":null},{"name":"Jake Russel Bernardino","group":"CNX","opps":131,"ob_calls":347,"ib_calls":11,"containers":20,"calls_per_opp":2.7328,"conversion":15.27,"cancel_7d":null},{"name":"Marijoh Mae Lee","group":"CNX","opps":189,"ob_calls":294,"ib_calls":5,"containers":20,"calls_per_opp":1.582,"conversion":10.58,"cancel_7d":null},{"name":"Jesse Vergara Jr","group":"CNX","opps":193,"ob_calls":310,"ib_calls":5,"containers":26,"calls_per_opp":1.6321,"conversion":13.47,"cancel_7d":null},{"name":"ERWIN CABLAO","group":"CNX","opps":237,"ob_calls":290,"ib_calls":5,"containers":17,"calls_per_opp":1.2447,"conversion":7.17,"cancel_7d":null},{"name":"Shella Marie Francisco","group":"CNX","opps":231,"ob_calls":272,"ib_calls":13,"containers":26,"calls_per_opp":1.2338,"conversion":11.26,"cancel_7d":null},{"name":"Aldwin Navarro","group":"CNX","opps":195,"ob_calls":249,"ib_calls":2,"containers":14,"calls_per_opp":1.2872,"conversion":7.18,"cancel_7d":null},{"name":"James Rebualos","group":"CNX","opps":200,"ob_calls":410,"ib_calls":3,"containers":10,"calls_per_opp":2.065,"conversion":5.0,"cancel_7d":null},{"name":"Thaddaeus Paulo Malig","group":"CNX","opps":202,"ob_calls":146,"ib_calls":4,"containers":21,"calls_per_opp":0.7426,"conversion":10.4,"cancel_7d":null},{"name":"Brian Valdez","group":"CNX","opps":175,"ob_calls":215,"ib_calls":6,"containers":26,"calls_per_opp":1.2629,"conversion":14.86,"cancel_7d":null},{"name":"Irish Verona","group":"CNX","opps":132,"ob_calls":164,"ib_calls":11,"containers":27,"calls_per_opp":1.3258,"conversion":20.45,"cancel_7d":null},{"name":"Jerome Roger Rosites","group":"CNX","opps":211,"ob_calls":174,"ib_calls":7,"containers":20,"calls_per_opp":0.8578,"conversion":9.48,"cancel_7d":null},{"name":"Ivan Marc Lanestosa","group":"CNX","opps":65,"ob_calls":283,"ib_calls":3,"containers":11,"calls_per_opp":4.4,"conversion":16.92,"cancel_7d":null},{"name":"Christian Jerick Sanchez","group":"CNX","opps":140,"ob_calls":312,"ib_calls":null,"containers":19,"calls_per_opp":null,"conversion":13.57,"cancel_7d":null},{"name":"John Rick Elumba","group":"CNX","opps":92,"ob_calls":235,"ib_calls":4,"containers":18,"calls_per_opp":2.5978,"conversion":19.57,"cancel_7d":null}]},"W75":{"num":75,"date":"6/1\u20136/7","agents":[{"name":"Sandra Haun","group":"CLW","opps":283,"ob_calls":370,"ib_calls":14,"containers":14,"calls_per_opp":1.3569,"conversion":4.95,"cancel_7d":0.0},{"name":"Frederick Hutchinson","group":"CLW","opps":197,"ob_calls":256,"ib_calls":7,"containers":23,"calls_per_opp":1.335,"conversion":11.68,"cancel_7d":0.0},{"name":"Christopher Monaldi","group":"CLW","opps":217,"ob_calls":286,"ib_calls":14,"containers":13,"calls_per_opp":1.3825,"conversion":5.99,"cancel_7d":0.0},{"name":"Michael Petersen","group":"CLW","opps":231,"ob_calls":263,"ib_calls":6,"containers":16,"calls_per_opp":1.1645,"conversion":6.93,"cancel_7d":1.9},{"name":"Matthew Floming","group":"CLW","opps":234,"ob_calls":226,"ib_calls":18,"containers":19,"calls_per_opp":1.0427,"conversion":8.12,"cancel_7d":13.3},{"name":"Ivy Fichtl","group":"CLW","opps":209,"ob_calls":320,"ib_calls":3,"containers":9,"calls_per_opp":1.5455,"conversion":4.31,"cancel_7d":0.0},{"name":"Richard Stoffregen","group":"CLW","opps":271,"ob_calls":300,"ib_calls":14,"containers":22,"calls_per_opp":1.1587,"conversion":8.12,"cancel_7d":4.2},{"name":"Dawn Carreiro","group":"CLW","opps":174,"ob_calls":212,"ib_calls":13,"containers":20,"calls_per_opp":1.2931,"conversion":11.49,"cancel_7d":13.3},{"name":"Christina Morales","group":"CLW","opps":179,"ob_calls":202,"ib_calls":8,"containers":17,"calls_per_opp":1.1732,"conversion":9.5,"cancel_7d":4.0},{"name":"Kimberly Hewitt","group":"CLW","opps":247,"ob_calls":239,"ib_calls":24,"containers":37,"calls_per_opp":1.0648,"conversion":14.98,"cancel_7d":0.0},{"name":"Dale Besida","group":"CLW","opps":213,"ob_calls":257,"ib_calls":7,"containers":14,"calls_per_opp":1.2394,"conversion":6.57,"cancel_7d":0.0},{"name":"Erik Goldring","group":"CLW","opps":176,"ob_calls":185,"ib_calls":15,"containers":17,"calls_per_opp":1.1364,"conversion":9.66,"cancel_7d":66.2},{"name":"Rene Dunn","group":"CLW","opps":176,"ob_calls":171,"ib_calls":null,"containers":15,"calls_per_opp":null,"conversion":8.52,"cancel_7d":8.7},{"name":"Charmaine Bacay","group":"CNX","opps":211,"ob_calls":437,"ib_calls":6,"containers":18,"calls_per_opp":2.0995,"conversion":8.53,"cancel_7d":9.8},{"name":"Edison Viray","group":"CNX","opps":131,"ob_calls":167,"ib_calls":13,"containers":13,"calls_per_opp":1.374,"conversion":9.92,"cancel_7d":11.1},{"name":"Gimarie Barastas","group":"CNX","opps":192,"ob_calls":363,"ib_calls":6,"containers":17,"calls_per_opp":1.9219,"conversion":8.85,"cancel_7d":5.3},{"name":"Jerico Galve","group":"CNX","opps":167,"ob_calls":348,"ib_calls":8,"containers":17,"calls_per_opp":2.1317,"conversion":10.18,"cancel_7d":11.1},{"name":"Cristal Apple Barredo","group":"CNX","opps":193,"ob_calls":318,"ib_calls":8,"containers":12,"calls_per_opp":1.6891,"conversion":6.22,"cancel_7d":0.0},{"name":"Jessa Rey Belotindos","group":"CNX","opps":120,"ob_calls":144,"ib_calls":8,"containers":10,"calls_per_opp":1.2667,"conversion":8.33,"cancel_7d":15.8},{"name":"Lienard Bryan Organo","group":"CNX","opps":134,"ob_calls":425,"ib_calls":11,"containers":9,"calls_per_opp":3.2537,"conversion":6.72,"cancel_7d":55.6},{"name":"Sendy Firmalino","group":"CNX","opps":177,"ob_calls":341,"ib_calls":8,"containers":38,"calls_per_opp":1.9718,"conversion":21.47,"cancel_7d":12.0},{"name":"Ednalyn Mirandilla","group":"CNX","opps":177,"ob_calls":436,"ib_calls":14,"containers":10,"calls_per_opp":2.5424,"conversion":5.65,"cancel_7d":3.6},{"name":"Hannay Lozano","group":"CNX","opps":186,"ob_calls":410,"ib_calls":2,"containers":19,"calls_per_opp":2.2151,"conversion":10.22,"cancel_7d":13.0},{"name":"Ferdinand Carlo Caete","group":"CNX","opps":170,"ob_calls":302,"ib_calls":7,"containers":16,"calls_per_opp":1.8176,"conversion":9.41,"cancel_7d":0.0},{"name":"Eumarbel Dionglay","group":"CNX","opps":191,"ob_calls":224,"ib_calls":6,"containers":26,"calls_per_opp":1.2042,"conversion":13.61,"cancel_7d":20.0},{"name":"Milkos Malcolm Orven Miguel","group":"CNX","opps":210,"ob_calls":275,"ib_calls":7,"containers":27,"calls_per_opp":1.3429,"conversion":12.86,"cancel_7d":35.0},{"name":"Jan Malvin Molina","group":"CNX","opps":183,"ob_calls":331,"ib_calls":2,"containers":19,"calls_per_opp":1.8197,"conversion":10.38,"cancel_7d":0.0},{"name":"May Anthonette Clavel","group":"CNX","opps":122,"ob_calls":115,"ib_calls":1,"containers":5,"calls_per_opp":0.9508,"conversion":4.1,"cancel_7d":4.0},{"name":"Marielle Coleen Placido","group":"CNX","opps":205,"ob_calls":329,"ib_calls":6,"containers":22,"calls_per_opp":1.6341,"conversion":10.73,"cancel_7d":5.0},{"name":"Jake Russel Bernardino","group":"CNX","opps":159,"ob_calls":271,"ib_calls":8,"containers":17,"calls_per_opp":1.7547,"conversion":10.69,"cancel_7d":14.8},{"name":"Marijoh Mae Lee","group":"CNX","opps":166,"ob_calls":259,"ib_calls":3,"containers":20,"calls_per_opp":1.5783,"conversion":12.05,"cancel_7d":14.8},{"name":"Jesse Vergara Jr","group":"CNX","opps":186,"ob_calls":211,"ib_calls":9,"containers":19,"calls_per_opp":1.1828,"conversion":10.22,"cancel_7d":3.8},{"name":"ERWIN CABLAO","group":"CNX","opps":193,"ob_calls":237,"ib_calls":9,"containers":21,"calls_per_opp":1.2746,"conversion":10.88,"cancel_7d":4.0},{"name":"Shella Marie Francisco","group":"CNX","opps":186,"ob_calls":163,"ib_calls":7,"containers":15,"calls_per_opp":0.914,"conversion":8.06,"cancel_7d":34.4},{"name":"Aldwin Navarro","group":"CNX","opps":274,"ob_calls":352,"ib_calls":1,"containers":17,"calls_per_opp":1.2883,"conversion":6.2,"cancel_7d":6.7},{"name":"James Rebualos","group":"CNX","opps":157,"ob_calls":261,"ib_calls":2,"containers":28,"calls_per_opp":1.6752,"conversion":17.83,"cancel_7d":5.6},{"name":"Thaddaeus Paulo Malig","group":"CNX","opps":200,"ob_calls":186,"ib_calls":8,"containers":25,"calls_per_opp":0.97,"conversion":12.5,"cancel_7d":4.0},{"name":"Brian Valdez","group":"CNX","opps":166,"ob_calls":163,"ib_calls":2,"containers":22,"calls_per_opp":0.994,"conversion":13.25,"cancel_7d":16.1},{"name":"Irish Verona","group":"CNX","opps":170,"ob_calls":264,"ib_calls":12,"containers":18,"calls_per_opp":1.6235,"conversion":10.59,"cancel_7d":6.3},{"name":"Jerome Roger Rosites","group":"CNX","opps":158,"ob_calls":163,"ib_calls":8,"containers":21,"calls_per_opp":1.0823,"conversion":13.29,"cancel_7d":4.2},{"name":"Ivan Marc Lanestosa","group":"CNX","opps":169,"ob_calls":300,"ib_calls":6,"containers":14,"calls_per_opp":1.8107,"conversion":8.28,"cancel_7d":20.0},{"name":"Christian Jerick Sanchez","group":"CNX","opps":173,"ob_calls":405,"ib_calls":null,"containers":16,"calls_per_opp":null,"conversion":9.25,"cancel_7d":4.2},{"name":"John Rick Elumba","group":"CNX","opps":197,"ob_calls":323,"ib_calls":1,"containers":19,"calls_per_opp":1.6447,"conversion":9.64,"cancel_7d":25.9}]}};
-const WKS=Object.keys(D).sort((a,b)=>D[a].num-D[b].num);
-const METRICS=[
-  {key:'opps',label:'Opps',fmt:'int',ct:'pct'},
-  {key:'ob_calls',label:'OB Calls',fmt:'int',ct:'pct'},
-  {key:'ib_calls',label:'IB Calls',fmt:'int',ct:'pct'},
-  {key:'containers',label:'Cont.',fmt:'int',ct:'pct'},
-  {key:'calls_per_opp',label:'Calls/Opp',fmt:'d2',ct:'pp'},
-  {key:'conversion',label:'Conv %',fmt:'p1',ct:'pp'},
-  {key:'cancel_7d',label:'7D Cancel',fmt:'p1',ct:'pp'},
-];
-let AW=WKS[WKS.length-1],GF='ALL',SK='name',SD='asc';
+<footer>Product Reporting · Internal use only</footer>
 
-const fn=s=>{if(!s)return'';return s===s.toUpperCase()?s.split(' ').map(w=>w[0]+w.slice(1).toLowerCase()).join(' '):s};
-const fv=(v,f)=>{if(v==null)return'<span class="null-val">—</span>';if(f==='int')return Math.round(v).toLocaleString();if(f==='d2')return(+v).toFixed(2);if(f==='p1')return(+v).toFixed(1)+'%';return v;};
-const fr=(v,f)=>{if(v==null)return'';if(f==='int')return Math.round(v).toLocaleString();if(f==='d2')return(+v).toFixed(2);if(f==='p1')return(+v).toFixed(1)+'%';return v;};
-const ga=(n,w)=>D[w]?.agents.find(a=>a.name===n)||null;
-const l4w=(n,k)=>{const vs=WKS.map(w=>ga(n,w)?.[k]).filter(v=>v!=null);return vs.length?vs.reduce((s,v)=>s+v,0)/vs.length:null;};
-const wow=(n,k,ct,cw)=>{const i=WKS.indexOf(cw);if(i<1)return null;const pw=WKS[i-1];const c=ga(n,cw)?.[k],p=ga(n,pw)?.[k];if(c==null||p==null)return null;return ct==='pp'?c-p:p?((c-p)/p*100):null;};
-const fc=(v,ct)=>{if(v==null)return{t:'',c:'neu'};const s=v>=0?'+':'';return{t:ct==='pp'?s+v.toFixed(1)+'pp':s+v.toFixed(1)+'%',c:v>0.05?'pos':v<-0.05?'neg':'neu'};};
-
-function rwb(){
-  document.querySelectorAll('.week-btn').forEach((b,i)=>{b.className='week-btn'+(WKS[i]===AW?' active':'');});
-  document.getElementById('hdr-week').textContent='W'+D[AW].num+' · '+D[AW].date;
-}
-function wbs(id,cb){
-  const el=document.getElementById(id);if(!el)return;el.innerHTML='';
-  WKS.forEach(w=>{const b=document.createElement('button');b.className='week-btn'+(w===AW?' active':'');b.textContent='W'+D[w].num+' ('+D[w].date+')';b.onclick=()=>{AW=w;rwb();cb();};el.appendChild(b);});
-}
-
-function bat(){
-  let ag=[...D[AW].agents];
-  if(GF!=='ALL')ag=ag.filter(a=>a.group===GF);
-  ag.sort((a,b)=>{let va,vb;if(SK==='name'){va=a.name;vb=b.name;}else if(SK==='group'){va=a.group;vb=b.group;}else{va=a[SK]??-Infinity;vb=b[SK]??-Infinity;}if(va<vb)return SD==='asc'?-1:1;if(va>vb)return SD==='asc'?1:-1;return 0;});
-  const cols=[{key:'name',label:'Agent'},{key:'group',label:'Grp'},...METRICS];
-  document.getElementById('agent-thead').innerHTML='<tr>'+cols.map(c=>{const arr=c.key===SK?(SD==='asc'?'▲':'▼'):'⇅';return`<th class="${c.key===SK?'sorted':''}" data-sort="${c.key}">${c.label} <span class="sa">${arr}</span></th>`;}).join('')+'</tr>';
-  document.getElementById('agent-tbody').innerHTML=ag.map(a=>{
-    const mts=METRICS.map(m=>{const lv=l4w(a.name,m.key),wv=wow(a.name,m.key,m.ct,AW),ch=fc(wv,m.ct);return`<td class="metric-cell"><span class="val">${fv(a[m.key],m.fmt)}</span><div class="sub"><span style="color:#9ca3af">${lv!=null?'L4: '+fr(lv,m.fmt):''}</span><span class="chg ${ch.c}">${ch.t}</span></div></td>`;}).join('');
-    return`<tr><td class="name-cell">${fn(a.name)}</td><td><span class="badge ${a.group}">${a.group}</span></td>${mts}</tr>`;
-  }).join('');
-  document.getElementById('agent-thead').querySelectorAll('th').forEach(th=>{th.onclick=()=>{const k=th.dataset.sort;if(SK===k)SD=SD==='asc'?'desc':'asc';else{SK=k;SD=k==='name'||k==='group'?'asc':'desc';}bat();};});
-}
-
-// Org-level totals
-function orgTotals(wk){
-  const ag=D[wk].agents.filter(a=>a.opps);
-  const totOpps=ag.reduce((s,a)=>s+(a.opps||0),0);
-  const totCont=ag.reduce((s,a)=>s+(a.containers||0),0);
-  const conv=totOpps>0?(totCont/totOpps*100):0;
-  return{totOpps,totCont,conv};
-}
-
-function buildOrgBanner(){
-  const {totOpps,totCont,conv}=orgTotals(AW);
-  document.getElementById('org-banner').innerHTML=`
-    <div class="org-banner-title">W${D[AW].num} · ${D[AW].date} · Org Total</div>
-    <div class="org-stats">
-      <div class="org-stat">
-        <div class="org-stat-label">Total Opportunities</div>
-        <div class="org-stat-val">${totOpps.toLocaleString()}</div>
-        <div class="org-stat-sub">across all agents</div>
-      </div>
-      <div class="org-stat" style="padding-left:28px">
-        <div class="org-stat-label">Total Containers</div>
-        <div class="org-stat-val">${totCont.toLocaleString()}</div>
-        <div class="org-stat-sub">across all agents</div>
-      </div>
-      <div class="org-stat" style="padding-left:28px">
-        <div class="org-stat-label">Overall Conversion</div>
-        <div class="org-stat-val">${conv.toFixed(1)}%</div>
-        <div class="org-stat-sub">containers ÷ opportunities</div>
-      </div>
-    </div>`;
-}
-
-function cg(g,w){
-  const ag=D[w].agents.filter(a=>a.group===g&&a.opps);if(!ag.length)return null;
-  const n=ag.length,sm=k=>ag.reduce((s,a)=>s+(a[k]||0),0);
-  const nb=k=>ag.filter(a=>a[k]!=null);
-  const tO=sm('opps'),tOb=sm('ob_calls'),tIb=sm('ib_calls'),tC=sm('containers');
-  const c7=nb('cancel_7d').length?nb('cancel_7d').reduce((s,a)=>s+a.cancel_7d,0)/nb('cancel_7d').length:null;
-  return{opps:Math.round(tO/n),ob_calls:Math.round(tOb/n),ib_calls:Math.round(tIb/n),containers:Math.round(tC/n),calls_per_opp:tO>0?+((tOb+tIb)/tO).toFixed(2):null,conversion:tO>0?+(tC/tO*100).toFixed(1):null,cancel_7d:c7!=null?+c7.toFixed(1):null,n};
-}
-function cgl4(g,k){const vs=WKS.map(w=>cg(g,w)?.[k]).filter(v=>v!=null);return vs.length?vs.reduce((s,v)=>s+v,0)/vs.length:null;}
-
-function bgc(){
-  const i=WKS.indexOf(AW),pw=i>0?WKS[i-1]:null;
-  document.getElementById('group-cards').innerHTML=['CLW','CNX'].map(g=>{
-    const cur=cg(g,AW),pri=pw?cg(g,pw):null;
-    const rows=METRICS.map(m=>{
-      const v=cur?cur[m.key]:null,l4=cgl4(g,m.key),pv=pri?pri[m.key]:null;
-      let wv=null;if(v!=null&&pv!=null)wv=m.ct==='pp'?v-pv:pv?((v-pv)/pv*100):null;
-      const ch=fc(wv,m.ct);
-      return`<tr><td>${m.label}</td><td>${fv(v,m.fmt)}</td><td style="color:#9ca3af">${l4!=null?fr(l4,m.fmt):''}</td><td><span class="chg ${ch.c}" style="font-weight:600">${ch.t||'—'}</span></td></tr>`;
-    }).join('');
-    return`<div class="group-card"><div class="group-card-hdr ${g}">${g}<span>${cur?.n||0} agents</span></div><div class="gtbl-wrap"><table class="group-tbl"><thead><tr><th>Metric</th><th>Current</th><th>L4W Avg</th><th>WoW</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
-  }).join('');
-}
-
-// Scatter — shared axes across both weeks
-function bsc(){
-  const i=WKS.indexOf(AW),pw=i>0?WKS[i-1]:null;
-  const getPts=(wk,g)=>wk?D[wk].agents.filter(a=>a.group===g&&a.calls_per_opp>=0.08&&a.conversion!=null&&a.calls_per_opp!=null).map(a=>({x:+a.conversion,y:+a.calls_per_opp,g,name:fn(a.name)})):[];
-
-  // Compute shared axis bounds across BOTH weeks
-  const allPts=[...getPts(pw,'CLW'),...getPts(pw,'CNX'),...getPts(AW,'CLW'),...getPts(AW,'CNX')];
-  const sharedXMax = allPts.length ? Math.ceil(Math.max(...allPts.map(p=>p.x))*1.2) : 30;
-  const sharedYMax = allPts.length ? Math.ceil(Math.max(...allPts.map(p=>p.y))*1.2*10)/10 : 4;
-
-  document.getElementById('scat-pri-title').textContent=pw?'W'+D[pw].num+' · '+D[pw].date:'Prior week unavailable';
-  document.getElementById('scat-cur-title').textContent='W'+D[AW].num+' · '+D[AW].date;
-
-  drawScatter('scat-pri', pw?[...getPts(pw,'CLW'),...getPts(pw,'CNX')]:[], sharedXMax, sharedYMax);
-  drawScatter('scat-cur', [...getPts(AW,'CLW'),...getPts(AW,'CNX')], sharedXMax, sharedYMax);
-  setupTooltip('scat-pri'); setupTooltip('scat-cur');
-}
-
-function drawScatter(canvasId, pts, xMax, yMax){
-  const canvas=document.getElementById(canvasId);if(!canvas)return;
-  const W=canvas.offsetWidth||canvas.parentElement.offsetWidth||400;
-  canvas.width=W;canvas.height=300;
-  const ctx=canvas.getContext('2d');
-  const pad={top:20,right:20,bottom:50,left:55};
-  const pw=W-pad.left-pad.right,ph=300-pad.top-pad.bottom;
-  const toX=v=>pad.left+(v/xMax)*pw;
-  const toY=v=>pad.top+ph-(v/yMax)*ph;
-
-  // Grid
-  ctx.strokeStyle='#f3f4f6';ctx.lineWidth=1;
-  for(let i=0;i<=5;i++){
-    const y=pad.top+i*(ph/5);
-    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(pad.left+pw,y);ctx.stroke();
-    const val=(yMax*(1-i/5)).toFixed(1);
-    ctx.fillStyle='#9ca3af';ctx.font='10px system-ui';ctx.textAlign='right';
-    ctx.fillText(val,pad.left-6,y+3);
-  }
-  for(let i=0;i<=5;i++){
-    const x=pad.left+i*(pw/5);
-    ctx.beginPath();ctx.moveTo(x,pad.top);ctx.lineTo(x,pad.top+ph);ctx.stroke();
-    const val=(xMax*i/5).toFixed(0)+'%';
-    ctx.fillStyle='#9ca3af';ctx.font='10px system-ui';ctx.textAlign='center';
-    ctx.fillText(val,x,pad.top+ph+16);
-  }
-
-  // Axis labels
-  ctx.fillStyle='#6b7280';ctx.font='11px system-ui';ctx.textAlign='center';
-  ctx.fillText('Conversion %',pad.left+pw/2,pad.top+ph+38);
-  ctx.save();ctx.translate(14,pad.top+ph/2);ctx.rotate(-Math.PI/2);ctx.fillText('Calls per Opp',0,0);ctx.restore();
-
-  // Axes
-  ctx.strokeStyle='#e5e7eb';ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(pad.left,pad.top);ctx.lineTo(pad.left,pad.top+ph);ctx.lineTo(pad.left+pw,pad.top+ph);ctx.stroke();
-
-  if(!pts.length){ctx.fillStyle='#9ca3af';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('No data',W/2,150);canvas._pts=[];return;}
-
-  pts.forEach(p=>{
-    ctx.beginPath();ctx.arc(toX(p.x),toY(p.y),5,0,Math.PI*2);
-    ctx.fillStyle=p.g==='CLW'?'rgba(26,26,26,0.85)':'rgba(206,32,47,0.85)';
-    ctx.fill();
-  });
-  canvas._pts=pts.map(p=>({...p,cx:toX(p.x),cy:toY(p.y)}));
-}
-
-function setupTooltip(canvasId){
-  const canvas=document.getElementById(canvasId);if(!canvas)return;
-  const tip=document.getElementById('tip');
-  canvas.addEventListener('mousemove',e=>{
-    const r=canvas.getBoundingClientRect();
-    const mx=(e.clientX-r.left)*(canvas.width/r.width),my=(e.clientY-r.top)*(canvas.height/r.height);
-    const hit=(canvas._pts||[]).find(p=>Math.hypot(p.cx-mx,p.cy-my)<10);
-    if(hit){tip.style.display='block';tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY-8)+'px';tip.textContent=hit.name+': '+hit.x.toFixed(1)+'% conv, '+hit.y.toFixed(2)+' CPO';}
-    else tip.style.display='none';
-  });
-  canvas.addEventListener('mouseleave',()=>{tip.style.display='none';});
-}
-
-function buildSummary(){buildOrgBanner();bgc();setTimeout(bsc,50);}
-
-document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
-  document.querySelectorAll('.tab,.page').forEach(e=>e.classList.remove('active'));
-  t.classList.add('active');document.getElementById(t.dataset.tab+'-page').classList.add('active');
-  if(t.dataset.tab==='summary')buildSummary();
-});
-document.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('[data-grp]').forEach(x=>x.classList.remove('active'));
-  b.classList.add('active');GF=b.dataset.grp;bat();
-});
-window.addEventListener('resize',()=>{if(document.getElementById('summary-page').classList.contains('active'))bsc();});
-wbs('week-selector',()=>bat());
-wbs('sum-week-selector',()=>buildSummary());
-rwb();buildSummary();
-</script>
 </body>
 </html>
