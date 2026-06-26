@@ -183,6 +183,10 @@
   .rank-score { font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 800; }
   .score-bar-wrap { width: 70px; height: 4px; background: var(--cloud); border-radius: 2px; margin-top: 4px; margin-left: auto; }
   .score-bar-fill { height: 100%; border-radius: 2px; }
+  .orders-flag { display:inline-flex; align-items:center; gap:3px; font-size:9px; font-family:'Montserrat',sans-serif; font-weight:700; color:#b45309; background:#fef3e2; border:1px solid #fde68a; border-radius:3px; padding:1px 5px; margin-left:4px; vertical-align:middle; cursor:help; }
+  .orders-notice { background:#fef3e2; border:1px solid #fde68a; border-left:3px solid #b45309; border-radius:5px; padding:9px 14px; margin-bottom:18px; font-size:11px; color:#92400e; font-family:'Montserrat',sans-serif; display:flex; align-items:center; gap:8px; }
+  .orders-notice strong { font-weight:700; }
+  .orders-dismiss { margin-left:auto; cursor:pointer; font-size:13px; color:#b45309; background:none; border:none; font-weight:700; padding:0 4px; line-height:1; }
 </style>
 </head>
 <body>
@@ -210,7 +214,7 @@
   <div id="summaryRangeControls" style="display:none;">
     <div class="slider-section">
       <div class="preset-pills">
-        <button class="preset-pill" data-preset="week" onclick="applyPreset('week',this)">This Week</button>
+        <button class="preset-pill" data-preset="week" onclick="applyPreset('week',this)">Today</button>
         <button class="preset-pill" data-preset="ytd" onclick="applyPreset('ytd',this)">YTD</button>
       </div>
       <div class="slider-bounds"><span id="boundStart"></span><span id="boundEnd"></span></div>
@@ -226,6 +230,7 @@
 </div>
 
 <div class="content">
+<div class="orders-notice" id="ordersNotice"><span>⚠</span><span><strong>Orders data pending validation</strong> — currently uses Containers as a proxy. Validate against Tableau once admin provides the custom SQL (expected week of 6/30/2026).</span><button class="orders-dismiss" onclick="document.getElementById('ordersNotice').style.display='none'" title="Dismiss">✕</button></div>
 
 <div class="page active" id="page-summary">
   <div class="section-label">Team Overview</div>
@@ -245,11 +250,11 @@
     <canvas id="scatterCanvas" height="280"></canvas>
   </div>
   <div class="trend-card">
-    <div class="section-label" style="margin-bottom:10px;">Weekly Trend — Full Year 2026</div>
+    <div class="section-label" style="margin-bottom:10px;">Daily Trend — Full Year 2026</div>
     <div class="trend-legend">
       <span><span class="lline" style="background:var(--oasis)"></span>Total Engagements</span>
       <span><span class="lline" style="background:var(--maraschino)"></span>Containers Sold</span>
-      <span style="font-size:10px;color:#9ca3af;margin-left:4px">Always shows all 23 weeks, independent of the date filter above</span>
+      <span style="font-size:10px;color:#9ca3af;margin-left:4px">Always shows all days, independent of the date filter above</span>
     </div>
     <canvas id="trendCanvas" height="240"></canvas>
   </div>
@@ -274,7 +279,7 @@
             <th onclick="sortAgents(0)">Agent <span class="sort-arrow">↕</span></th>
             <th onclick="sortAgents(1)" class="sorted">Engagements <span class="sort-arrow">↓</span></th>
             <th onclick="sortAgents(2)">Containers <span class="sort-arrow">↕</span></th>
-            <th onclick="sortAgents(3)">Orders <span class="sort-arrow">↕</span></th>
+            <th onclick="sortAgents(3)">Orders <span class="orders-flag" title="Pending Tableau validation — using Containers as proxy">⚠ est.</span> <span class="sort-arrow">↕</span></th>
             <th onclick="sortAgents(4)">Conversion <span class="sort-arrow">↕</span></th>
             <th onclick="sortAgents(5)">Close Rate <span class="sort-arrow">↕</span></th>
             <th onclick="sortAgents(6)">Ghost <span class="sort-arrow">↕</span></th>
@@ -322,10 +327,10 @@ const D = {"weeks":{"2026-01-05":{"label":"Jan 05 - Jan 11, 2026","summary":{"to
 // ─────────────────────────────────────────────
 // STATE & HELPERS
 // ─────────────────────────────────────────────
-const WEEK_KEYS = Object.keys(D.weeks).sort();
-const NUM_WEEKS = WEEK_KEYS.length;
-const WEEK_DATES = WEEK_KEYS.map(k => new Date(k + 'T00:00:00'));
-let rangeStart = NUM_WEEKS - 1, rangeEnd = NUM_WEEKS - 1; // default: most recent week
+const DAY_KEYS = Object.keys(D.days).sort();
+const NUM_DAYS = DAY_KEYS.length;
+const DAY_DATES = DAY_KEYS.map(k => new Date(k + 'T00:00:00'));
+let rangeStart = NUM_DAYS - 1, rangeEnd = NUM_DAYS - 1; // default: most recent week
 let channelFilter = 'all', agentSortCol = 1, agentSortDir = -1;
 let currentAgentRows = [], currentCoaching = {};
 let customWeights = null; // null = default 40/35/15/10
@@ -333,11 +338,11 @@ let customWeights = null; // null = default 40/35/15/10
 function round1(v){ return Math.round(v*10)/10; }
 function fmtDate(d){ return d.toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
 function fmtDateYear(d){ return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
-function weekLabel(idx){ return D.weeks[WEEK_KEYS[idx]].label; }
+function dayLabel(idx){ return D.days[DAY_KEYS[idx]].label; }
 function weekContainingDate(target){
-  // largest week index whose start <= target; clamp to [0, NUM_WEEKS-1]
+  // largest week index whose start <= target; clamp to [0, NUM_DAYS-1]
   let idx = 0;
-  for(let i=0;i<NUM_WEEKS;i++){ if(WEEK_DATES[i] <= target) idx = i; else break; }
+  for(let i=0;i<NUM_DAYS;i++){ if(DAY_DATES[i] <= target) idx = i; else break; }
   return idx;
 }
 
@@ -348,7 +353,7 @@ function aggregateRange(startIdx, endIdx){
   const agentMap = {}; // name -> accumulator
 
   for(let wi=startIdx; wi<=endIdx; wi++){
-    const wk = D.weeks[WEEK_KEYS[wi]];
+    const wk = D.days[DAY_KEYS[wi]];
     wk.agents.forEach(a=>{
       if(!agentMap[a.Agent]) agentMap[a.Agent] = {
         Engagements:0, Ghost:0, NoOpp:0, Containers:0, Orders:0,
@@ -395,7 +400,7 @@ function aggregateRange(startIdx, endIdx){
   let chat = {eng:0,sales:0,orders:0,ghost:0,noOpp:0,handleSum:0,waitSum:0,ghostWaitSum:0};
   let sms  = {eng:0,sales:0,orders:0,ghost:0,noOpp:0,handleSum:0,waitSum:0,ghostWaitSum:0};
   for(let wi=startIdx; wi<=endIdx; wi++){
-    const s = D.weeks[WEEK_KEYS[wi]].summary;
+    const s = D.days[DAY_KEYS[wi]].summary;
     ['chat','sms'].forEach(ch=>{
       const src = s[ch], dst = ch==='chat'?chat:sms;
       dst.eng+=src.engagements; dst.sales+=src.sales; dst.orders+=src.orders;
@@ -436,15 +441,15 @@ function aggregateRange(startIdx, endIdx){
 function rangeLen(){ return rangeEnd - rangeStart + 1; }
 
 function updateRangeBar(){
-  const startLabel = D.weeks[WEEK_KEYS[rangeStart]].label.split(' - ')[0];
-  const endLabel = D.weeks[WEEK_KEYS[rangeEnd]].label;
+  const startLabel = D.days[DAY_KEYS[rangeStart]].label.split(' - ')[0];
+  const endLabel = D.days[DAY_KEYS[rangeEnd]].label;
   document.getElementById('rangeLabel').textContent = rangeStart===rangeEnd ? endLabel : (startLabel + ' – ' + endLabel);
-  document.getElementById('hdr-week-label').textContent = 'Data through ' + D.weeks[WEEK_KEYS[NUM_WEEKS-1]].label.split(' - ')[1];
+  document.getElementById('hdr-week-label').textContent = 'Data through ' + D.days[DAY_KEYS[NUM_DAYS-1]].label.split(' - ')[1];
   const tag = document.getElementById('rangeTag');
   const len = rangeLen();
   tag.textContent = len===1 ? 'Week' : len+' weeks';
   document.getElementById('rangePrev').disabled = (rangeStart - len < 0);
-  document.getElementById('rangeNext').disabled = (rangeEnd + len > NUM_WEEKS-1);
+  document.getElementById('rangeNext').disabled = (rangeEnd + len > NUM_DAYS-1);
 
   const ss = document.getElementById('handleStart'), es = document.getElementById('handleEnd');
   if(ss && es){ updateSliderVisual(); }
@@ -454,7 +459,7 @@ function stepRange(dir){
   const len = rangeLen();
   let ns = rangeStart + dir*len, ne = rangeEnd + dir*len;
   if(ns < 0){ ns = 0; ne = len-1; }
-  if(ne > NUM_WEEKS-1){ ne = NUM_WEEKS-1; ns = ne-len+1; }
+  if(ne > NUM_DAYS-1){ ne = NUM_DAYS-1; ns = ne-len+1; }
   rangeStart = ns; rangeEnd = ne;
   refreshAll();
 }
@@ -465,42 +470,42 @@ function stepRange(dir){
 // === rangeEnd) always occupies one real slot of width on the track, instead
 // of collapsing both handles onto the same point.
 function updateSliderVisual(){
-  const pct1 = rangeStart/NUM_WEEKS, pct2 = (rangeEnd+1)/NUM_WEEKS;
+  const pct1 = rangeStart/NUM_DAYS, pct2 = (rangeEnd+1)/NUM_DAYS;
   const leftCalc = p => `calc(9px + (100% - 18px) * ${p})`;
   document.getElementById('sliderFill').style.left = leftCalc(pct1);
   document.getElementById('sliderFill').style.width = `calc((100% - 18px) * ${pct2-pct1})`;
   const hs = document.getElementById('handleStart'), he = document.getElementById('handleEnd');
   hs.style.left = leftCalc(pct1); he.style.left = leftCalc(pct2);
-  hs.setAttribute('aria-valuemin','0'); hs.setAttribute('aria-valuemax', String(NUM_WEEKS-1));
-  hs.setAttribute('aria-valuenow', String(rangeStart)); hs.setAttribute('aria-valuetext', D.weeks[WEEK_KEYS[rangeStart]].label);
-  he.setAttribute('aria-valuemin','0'); he.setAttribute('aria-valuemax', String(NUM_WEEKS-1));
-  he.setAttribute('aria-valuenow', String(rangeEnd)); he.setAttribute('aria-valuetext', D.weeks[WEEK_KEYS[rangeEnd]].label);
-  document.getElementById('sliderStartLabel').textContent = D.weeks[WEEK_KEYS[rangeStart]].label.split(' - ')[0];
-  document.getElementById('sliderEndLabel').textContent = D.weeks[WEEK_KEYS[rangeEnd]].label;
+  hs.setAttribute('aria-valuemin','0'); hs.setAttribute('aria-valuemax', String(NUM_DAYS-1));
+  hs.setAttribute('aria-valuenow', String(rangeStart)); hs.setAttribute('aria-valuetext', D.days[DAY_KEYS[rangeStart]].label);
+  he.setAttribute('aria-valuemin','0'); he.setAttribute('aria-valuemax', String(NUM_DAYS-1));
+  he.setAttribute('aria-valuenow', String(rangeEnd)); he.setAttribute('aria-valuetext', D.days[DAY_KEYS[rangeEnd]].label);
+  document.getElementById('sliderStartLabel').textContent = D.days[DAY_KEYS[rangeStart]].label.split(' - ')[0];
+  document.getElementById('sliderEndLabel').textContent = D.days[DAY_KEYS[rangeEnd]].label;
   document.querySelectorAll('.preset-pill').forEach(p=>p.classList.remove('active'));
 }
 
 function wireSlider(){
   const wrap = document.getElementById('sliderTrackWrap');
   const hs = document.getElementById('handleStart'), he = document.getElementById('handleEnd');
-  document.getElementById('boundStart').textContent = D.weeks[WEEK_KEYS[0]].label.split(' - ')[0];
-  document.getElementById('boundEnd').textContent = D.weeks[WEEK_KEYS[NUM_WEEKS-1]].label;
+  document.getElementById('boundStart').textContent = D.days[DAY_KEYS[0]].label.split(' - ')[0];
+  document.getElementById('boundEnd').textContent = D.days[DAY_KEYS[NUM_DAYS-1]].label;
 
-  // Returns a boundary position (0..NUM_WEEKS), not a week index — boundary b
+  // Returns a boundary position (0..NUM_DAYS), not a week index — boundary b
   // sits between week (b-1) and week b.
   function boundaryFromClientX(clientX){
     const r = wrap.getBoundingClientRect();
     const pad = 9;
     let pct = (clientX - r.left - pad) / (r.width - pad*2);
     pct = Math.max(0, Math.min(1, pct));
-    return Math.round(pct * NUM_WEEKS);
+    return Math.round(pct * NUM_DAYS);
   }
 
   let dragging = null; // 'start' | 'end' | null
 
   function applyDragBoundary(b){
     if(dragging==='start') rangeStart = Math.max(0, Math.min(b, rangeEnd));
-    else if(dragging==='end') rangeEnd = Math.max(rangeStart, Math.min(b-1, NUM_WEEKS-1));
+    else if(dragging==='end') rangeEnd = Math.max(rangeStart, Math.min(b-1, NUM_DAYS-1));
     updateSliderVisual();
     refreshAll();
   }
@@ -537,10 +542,10 @@ function wireSlider(){
       if(e.key==='ArrowLeft' || e.key==='ArrowDown') idx -= 1;
       else if(e.key==='ArrowRight' || e.key==='ArrowUp') idx += 1;
       else if(e.key==='Home') idx = 0;
-      else if(e.key==='End') idx = NUM_WEEKS-1;
+      else if(e.key==='End') idx = NUM_DAYS-1;
       else return;
       e.preventDefault();
-      idx = Math.max(0, Math.min(NUM_WEEKS-1, idx));
+      idx = Math.max(0, Math.min(NUM_DAYS-1, idx));
       if(which==='start') rangeStart = Math.min(idx, rangeEnd);
       else rangeEnd = Math.max(idx, rangeStart);
       updateSliderVisual(); refreshAll();
@@ -551,7 +556,7 @@ function wireSlider(){
 }
 
 function applyPreset(name, btn){
-  const lastIdx = NUM_WEEKS-1;
+  const lastIdx = NUM_DAYS-1;
   if(name==='week'){
     rangeStart = lastIdx; rangeEnd = lastIdx;
   } else if(name==='ytd'){
@@ -886,7 +891,7 @@ function exportAgentCSV(){
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const rangeLabel = (rangeStart===rangeEnd ? D.weeks[WEEK_KEYS[rangeEnd]].label : `${D.weeks[WEEK_KEYS[rangeStart]].label.split(' - ')[0]}_to_${D.weeks[WEEK_KEYS[rangeEnd]].label}`).replace(/[, ]+/g,'_');
+  const rangeLabel = (rangeStart===rangeEnd ? D.days[DAY_KEYS[rangeEnd]].label : `${D.days[DAY_KEYS[rangeStart]].label.split(' - ')[0]}_to_${D.days[DAY_KEYS[rangeEnd]].label}`).replace(/[, ]+/g,'_');
   a.href = url; a.download = `agent_view_${rangeLabel}.csv`;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
