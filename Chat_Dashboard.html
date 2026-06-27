@@ -278,7 +278,6 @@
 <div class="page" id="page-agents">
   <div class="table-wrap">
     <div class="table-search-bar">
-      <input type="text" id="agentSearch" placeholder="Search agent..." oninput="renderAgentTable()">
       <div class="filter-pills">
         <button class="filter-pill active" data-filter="all" onclick="setChannelFilter('all',this)">All</button>
         <button class="filter-pill" data-filter="Web Chat" onclick="setChannelFilter('Web Chat',this)">Web Chat</button>
@@ -754,7 +753,7 @@ function setChannelFilter(f,btn){ channelFilter=f; document.querySelectorAll('.f
 function getFilteredSortedAgents(){
   let data = [...currentAgentRows];
   if(channelFilter!=='all') data = data.filter(a=>a.Channel===channelFilter);
-  const q = document.getElementById('agentSearch').value.toLowerCase();
+  const q = '';
   const filtered = data.filter(a=>a.Agent.toLowerCase().includes(q));
   const cols = ['Agent','Engagements','Containers','Orders','Conversion','CloseRate','Ghost','GhostRate','AvgWait','AvgHandle','Cancel7Pct'];
   filtered.sort((a,b)=>{ const k=cols[agentSortCol]; return typeof a[k]==='string' ? agentSortDir*a[k].localeCompare(b[k]) : agentSortDir*(a[k]-b[k]); });
