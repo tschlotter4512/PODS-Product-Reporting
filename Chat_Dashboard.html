@@ -483,7 +483,7 @@
 
   <div class="preset-pills" style="margin-top:10px;">
 
-    <button class="preset-pill" data-preset="week" onclick="applyPreset('week',this)">Today</button>
+    <button class="preset-pill" data-preset="week" onclick="applyPreset('week',this)">This Week</button>
 
     <button class="preset-pill" data-preset="ytd" onclick="applyPreset('ytd',this)">YTD</button>
 
@@ -693,7 +693,9 @@ const NUM_DAYS = DAY_KEYS.length;
 
 const DAY_DATES = DAY_KEYS.map(k => new Date(k + 'T00:00:00'));
 
-let rangeStart = NUM_DAYS - 1, rangeEnd = NUM_DAYS - 1; // default: most recent week
+// default: most recent Mon-Sun week
+const _defMon = (function(){ let i = NUM_DAYS-1; while(i>0 && DAY_DATES[i].getDay()!==1) i--; return i; })();
+let rangeStart = _defMon, rangeEnd = Math.min(_defMon+6, NUM_DAYS-1);
 
 let channelFilter = 'all', agentSortCol = 1, agentSortDir = -1;
 
@@ -1135,7 +1137,12 @@ function applyPreset(name, btn){
 
   if(name==='week'){
 
-    rangeStart = lastIdx; rangeEnd = lastIdx;
+    // find most recent Monday in DAY_KEYS
+    let monIdx = lastIdx;
+    while(monIdx > 0 && DAY_DATES[monIdx].getDay() !== 1) monIdx--;
+    // find the Sunday of that week (or last available day)
+    let sunIdx = Math.min(monIdx + 6, lastIdx);
+    rangeStart = monIdx; rangeEnd = sunIdx;
 
   } else if(name==='ytd'){
 
