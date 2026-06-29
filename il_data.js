@@ -20,19 +20,23 @@ const IL_DATA = {
   labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
 
   // Adoption
-  active_agents: 26,
+  active_agents: 42,
   total_agents:  78,
 
+  // Cumulative totals as of last run — used to compute weekly delta (do not edit manually)
+  cum_quotes: 622,
+  cum_orders: 156,
+
   // Prior week values (for trajectory narrative)
-  prev_orders:  177,
-  prev_quotes:  670,
+  prev_orders:  156,
+  prev_quotes:  622,
   prev_savings: 55007,
 
-  // Department breakdown
+  // Department breakdown (active = agents who have quoted >= 1)
   depts: {
-    Sales: { total: 15, active: 7, orders: 65, quotes: 222, pitch_rate: 0, conv_rate: 29.3 },
-    SST:   { total: 18,   active: 12,   orders: 72,   quotes: 266,   pitch_rate: 0,   conv_rate: 27.1   },
-    OB:    { total: 43,    active: 6,    orders: 16,    quotes: 123,    pitch_rate: 0,    conv_rate: 13.0    },
+    Sales: { total: 15, active: 8, orders: 65, quotes: 222, pitch_rate: 0, conv_rate: 29.3 },
+    SST:   { total: 18,   active: 15,   orders: 72,   quotes: 266,   pitch_rate: 0,   conv_rate: 27.1   },
+    OB:    { total: 43,    active: 17,    orders: 16,    quotes: 123,    pitch_rate: 0,    conv_rate: 13.0    },
   },
 
   // Silent agent breakdown by location + dept
@@ -114,8 +118,8 @@ const IL_DATA = {
   },
   {
     "week": "6/22-6/28",
-    "quotes": 0,
-    "orders": 0
+    "quotes": 147,
+    "orders": 32
   }
 ],
 
