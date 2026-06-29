@@ -5,34 +5,34 @@ const IL_DATA = {
   updated_date: "June 28, 2026",
 
   // Program totals (cumulative since launch May 1, 2026)
-  total_quotes:  670,
-  total_orders:  177,
-  conv_rate:     26.4,
+  total_quotes:  622,
+  total_orders:  156,
+  conv_rate:     25.1,
 
   // Cancel rate impact
   cancel_delta_7d:  -6.3,
   cancel_delta_30d: -8.1,
   cancel_savings:   55007,
   annualized_savings:        660084,
-  projected_rollout_savings: "~$3,723,551",
+  projected_rollout_savings: "~$5,585,326",
   projected_rollout_agents:  220,
 
   labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
 
   // Adoption
-  active_agents: 39,
-  total_agents:  103,
+  active_agents: 26,
+  total_agents:  78,
 
   // Prior week values (for trajectory narrative)
-  prev_orders:  142,
-  prev_quotes:  552,
+  prev_orders:  177,
+  prev_quotes:  670,
   prev_savings: 55007,
 
   // Department breakdown
   depts: {
     Sales: { total: 15, active: 7, orders: 65, quotes: 222, pitch_rate: 0, conv_rate: 29.3 },
-    SST:   { total: 18,   active: 12,   orders: 72,   quotes: 263,   pitch_rate: 0,   conv_rate: 27.4   },
-    OB:    { total: 43,    active: 5,    orders: 12,    quotes: 109,    pitch_rate: 0,    conv_rate: 11.0    },
+    SST:   { total: 18,   active: 12,   orders: 72,   quotes: 266,   pitch_rate: 0,   conv_rate: 27.1   },
+    OB:    { total: 43,    active: 6,    orders: 16,    quotes: 123,    pitch_rate: 0,    conv_rate: 13.0    },
   },
 
   // Silent agent breakdown by location + dept
@@ -53,7 +53,7 @@ const IL_DATA = {
     "loc": "CLW",
     "dept": "OB",
     "total": 13,
-    "silent": 7
+    "silent": 6
   },
   {
     "loc": "CNX",
@@ -65,7 +65,7 @@ const IL_DATA = {
     "loc": "CNX",
     "dept": "SST",
     "total": 13,
-    "silent": 4
+    "silent": 3
   },
   {
     "loc": "CNX",
@@ -77,22 +77,54 @@ const IL_DATA = {
 
   // Weekly new quotes & orders (last 8 weeks) — for stacked bar chart
   weekly_trends: [
-    {"week": "5/5-5/11",  "quotes": 40, "orders": 8},
-    {"week": "5/12-5/18", "quotes": 55, "orders": 12},
-    {"week": "5/19-5/25", "quotes": 65, "orders": 16},
-    {"week": "5/26-6/1",  "quotes": 72, "orders": 18},
-    {"week": "6/2-6/8",   "quotes": 78, "orders": 21},
-    {"week": "6/9-6/15",  "quotes": 68, "orders": 15},
-    {"week": "6/16-6/21", "quotes": 97, "orders": 34},
-    {"week": "6/22-6/28", "quotes": 195, "orders": 53}
-  ],
+  {
+    "week": "5/5-5/11",
+    "quotes": 40,
+    "orders": 8
+  },
+  {
+    "week": "5/12-5/18",
+    "quotes": 55,
+    "orders": 12
+  },
+  {
+    "week": "5/19-5/25",
+    "quotes": 65,
+    "orders": 16
+  },
+  {
+    "week": "5/26-6/1",
+    "quotes": 72,
+    "orders": 18
+  },
+  {
+    "week": "6/2-6/8",
+    "quotes": 78,
+    "orders": 21
+  },
+  {
+    "week": "6/9-6/15",
+    "quotes": 68,
+    "orders": 15
+  },
+  {
+    "week": "6/16-6/21",
+    "quotes": 97,
+    "orders": 34
+  },
+  {
+    "week": "6/22-6/28",
+    "quotes": 0,
+    "orders": 0
+  }
+],
 
   // Opportunity table
   opp_table: [
   {
     "dept": "OB",
     "desc": "All 43 fully trained",
-    "silent": 38,
+    "silent": 37,
     "est_containers": "~3,320",
     "est_missed": "~442",
     "priority": "Critical"
@@ -195,17 +227,10 @@ const IL_DATA = {
     "booked": 5
   },
   {
-    "name": "Christopher Mondaldi",
-    "dept": "Unknown",
-    "loc": "\u2014",
+    "name": "Christopher Monaldi",
+    "dept": "OB",
+    "loc": "CLW",
     "quoted": 14,
-    "booked": 4
-  },
-  {
-    "name": "Isaac Zuniga",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 6,
     "booked": 4
   },
   {
@@ -241,20 +266,6 @@ const IL_DATA = {
     "dept": "SST",
     "loc": "CNX",
     "quoted": 5,
-    "booked": 3
-  },
-  {
-    "name": "Moises Franco",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 5,
-    "booked": 3
-  },
-  {
-    "name": "Damian Zambrano",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 2,
     "booked": 3
   },
   {
@@ -300,13 +311,6 @@ const IL_DATA = {
     "booked": 2
   },
   {
-    "name": "Erick Villa",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 3,
-    "booked": 2
-  },
-  {
     "name": "Katleen May Castro",
     "dept": "Sales",
     "loc": "CNX",
@@ -321,73 +325,10 @@ const IL_DATA = {
     "booked": 1
   },
   {
-    "name": "Oscar Vicente",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 4,
-    "booked": 1
-  },
-  {
-    "name": "Araceli Farfan",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 2,
-    "booked": 1
-  },
-  {
-    "name": "Attenas Martinez",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 2,
-    "booked": 1
-  },
-  {
     "name": "Erik Goldring",
     "dept": "OB",
     "loc": "CLW",
     "quoted": 2,
-    "booked": 1
-  },
-  {
-    "name": "Gabriela Maldonado Vera",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 2,
-    "booked": 1
-  },
-  {
-    "name": "Abhay Chaturvedi",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 1,
-    "booked": 1
-  },
-  {
-    "name": "Bryan Humberto Penaloza",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 1,
-    "booked": 1
-  },
-  {
-    "name": "Farukh Khan",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 1,
-    "booked": 1
-  },
-  {
-    "name": "Kalid Mora",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 1,
-    "booked": 1
-  },
-  {
-    "name": "Manny Alvarado",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 1,
     "booked": 1
   },
   {
@@ -419,9 +360,9 @@ const IL_DATA = {
     "booked": 0
   },
   {
-    "name": "Bueno Annalee",
-    "dept": "Unknown",
-    "loc": "\u2014",
+    "name": "Annalee Bueno",
+    "dept": "SST",
+    "loc": "CNX",
     "quoted": 3,
     "booked": 0
   },
@@ -433,24 +374,10 @@ const IL_DATA = {
     "booked": 0
   },
   {
-    "name": "Francisco Munoz",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 3,
-    "booked": 0
-  },
-  {
     "name": "Kimberly Hewitt",
     "dept": "OB",
     "loc": "CLW",
     "quoted": 3,
-    "booked": 0
-  },
-  {
-    "name": "Amisha  Kapoor",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 2,
     "booked": 0
   },
   {
@@ -482,27 +409,6 @@ const IL_DATA = {
     "booked": 0
   },
   {
-    "name": "Miriam Arrona",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 2,
-    "booked": 0
-  },
-  {
-    "name": "Nicolas Almanza",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 2,
-    "booked": 0
-  },
-  {
-    "name": "Ria Francisco",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 2,
-    "booked": 0
-  },
-  {
     "name": "Shannon Glendye",
     "dept": "Sales",
     "loc": "CLW",
@@ -510,44 +416,9 @@ const IL_DATA = {
     "booked": 0
   },
   {
-    "name": "Vanessa Flores",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 2,
-    "booked": 0
-  },
-  {
     "name": "Edison Viray",
     "dept": "OB",
     "loc": "CNX",
-    "quoted": 1,
-    "booked": 0
-  },
-  {
-    "name": "Edna Espinosa",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 1,
-    "booked": 0
-  },
-  {
-    "name": "Katia (Katt) Herrera",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 1,
-    "booked": 0
-  },
-  {
-    "name": "Mariana Miranda",
-    "dept": "Unknown",
-    "loc": "\u2014",
-    "quoted": 1,
-    "booked": 0
-  },
-  {
-    "name": "Pedro Alcala",
-    "dept": "Unknown",
-    "loc": "\u2014",
     "quoted": 1,
     "booked": 0
   },
@@ -587,13 +458,6 @@ const IL_DATA = {
     "booked": 0
   },
   {
-    "name": "Annalee Bueno",
-    "dept": "SST",
-    "loc": "CNX",
-    "quoted": 0,
-    "booked": 0
-  },
-  {
     "name": "Brian Valdez",
     "dept": "OB",
     "loc": "CNX",
@@ -611,13 +475,6 @@ const IL_DATA = {
     "name": "Christian Jerick Sanchez",
     "dept": "OB",
     "loc": "CNX",
-    "quoted": 0,
-    "booked": 0
-  },
-  {
-    "name": "Christopher Monaldi",
-    "dept": "OB",
-    "loc": "CLW",
     "quoted": 0,
     "booked": 0
   },
