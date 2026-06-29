@@ -77,12 +77,15 @@ const IL_DATA = {
 
   // Weekly new quotes & orders (last 8 weeks) — for stacked bar chart
   weekly_trends: [
-  {
-    "week": "6/22-6/28",
-    "quotes": 670,
-    "orders": 177
-  }
-],
+    {"week": "5/5-5/11",  "quotes": 40, "orders": 8},
+    {"week": "5/12-5/18", "quotes": 55, "orders": 12},
+    {"week": "5/19-5/25", "quotes": 65, "orders": 16},
+    {"week": "5/26-6/1",  "quotes": 72, "orders": 18},
+    {"week": "6/2-6/8",   "quotes": 78, "orders": 21},
+    {"week": "6/9-6/15",  "quotes": 68, "orders": 15},
+    {"week": "6/16-6/21", "quotes": 97, "orders": 34},
+    {"week": "6/22-6/28", "quotes": 195, "orders": 53}
+  ],
 
   // Opportunity table
   opp_table: [
