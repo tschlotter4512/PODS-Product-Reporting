@@ -93,6 +93,18 @@ td.r { text-align: right; } tr:last-child td { border-bottom: none; } tr:hover t
 .seg-unbooked { background: #99b4d1; width: 100%; }
 .chart-total-lbl { font-size: 10px; font-weight: 700; color: var(--navy); }
 .chart-week-lbl  { font-size: 9px; color: var(--gray-text); text-align: center; margin-top: 6px; white-space: nowrap; }
+.chart-col { position: relative; }
+.chart-tip {
+  display: none; position: absolute; bottom: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%); background: var(--navy); color: white;
+  font-size: 11px; line-height: 1.65; padding: 7px 11px; border-radius: 5px;
+  white-space: nowrap; z-index: 20; pointer-events: none;
+}
+.chart-tip::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 5px solid transparent; border-top-color: var(--navy);
+}
+.chart-col:hover .chart-tip { display: block; }
 </style>
 </head>
 <body>
@@ -375,7 +387,14 @@ document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.t
     const totalH  = Math.round((w.quotes / maxQ) * CHART_H);
     const bookedH = Math.round((w.orders / maxQ) * CHART_H);
     const unbkH   = totalH - bookedH;
+    const conv    = w.quotes > 0 ? (w.orders / w.quotes * 100).toFixed(1) : '0.0';
     barsHtml += `<div class="chart-col" style="flex:1;">
+      <div class="chart-tip">
+        <div style="font-weight:700;margin-bottom:3px;">${w.week}</div>
+        <div>Quotes:&nbsp;<strong>${w.quotes}</strong></div>
+        <div>Orders:&nbsp;<strong>${w.orders}</strong></div>
+        <div>Conv:&nbsp;&nbsp;&nbsp;<strong>${conv}%</strong></div>
+      </div>
       <div style="font-size:9px;font-weight:700;color:var(--navy);margin-bottom:2px;">${w.quotes}</div>
       <div class="chart-bar-wrap">
         <div class="seg-booked"   style="height:${bookedH}px;"></div>
