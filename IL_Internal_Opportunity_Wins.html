@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Integrated Labor — Internal Summary &amp; Wins</title>
+<script src="il_data.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -47,7 +48,6 @@ body { font-family: 'Barlow', sans-serif; background: var(--gray-bg); color: var
 .kpi-mini-label { font-size: 11px; color: var(--gray-text); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
 .kpi-mini-sub { font-size: 11px; color: var(--gray-text); margin-top: 2px; }
 .kpi-mini .green { color: var(--green); }
-.kpi-mini .red-text { color: var(--red); }
 
 .alert { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 13px; line-height: 1.6; }
 .alert.info { background: #eff6ff; border-left: 4px solid var(--blue); }
@@ -98,7 +98,7 @@ body { font-family: 'Barlow', sans-serif; background: var(--gray-bg); color: var
     </div>
   </div>
   <div class="header-meta">
-    <strong>Updated June 22, 2026</strong><br>
+    <strong id="hdr-updated"></strong><br>
     Cumulative since launch<br>
     <span class="internal-badge">Internal Only</span>
   </div>
@@ -112,122 +112,22 @@ body { font-family: 'Barlow', sans-serif; background: var(--gray-bg); color: var
 <!-- ══════════════════════ WINS ══════════════════════ -->
 <div id="tab-wins" class="content active">
 
-  <div class="alert success" style="margin-bottom:20px;">
-    <div class="alert-icon">🏆</div>
-    <div><strong>Cumulative Summary:</strong> Since launch, the program has generated <strong>552 labor quotes</strong>, booked <strong>142 labor orders</strong>, and produced <strong>$55,007 in measurable cancel rate savings</strong> — with 42 of 78 agents actively quoting labor.</div>
-  </div>
+  <div class="alert success" style="margin-bottom:20px;" id="summary-banner"></div>
 
   <div class="section-title">Program Highlights</div>
-  <div class="four-col" style="margin-bottom:20px;">
-    <div class="kpi-mini">
-      <div class="kpi-mini-val">552</div>
-      <div class="kpi-mini-label">Labor Quotes</div>
-      <div class="kpi-mini-sub">Since launch</div>
-    </div>
-    <div class="kpi-mini">
-      <div class="kpi-mini-val">142</div>
-      <div class="kpi-mini-label">Labor Orders Booked</div>
-      <div class="kpi-mini-sub">Since launch</div>
-    </div>
-    <div class="kpi-mini">
-      <div class="kpi-mini-val green">26.7%</div>
-      <div class="kpi-mini-label">Quote → Order Conv.</div>
-      <div class="kpi-mini-sub">~3 in 10 quoted customers book</div>
-    </div>
-    <div class="kpi-mini">
-      <div class="kpi-mini-val">42 / 78</div>
-      <div class="kpi-mini-label">Agents Active</div>
-      <div class="kpi-mini-sub">53.8% adoption rate</div>
-    </div>
-  </div>
+  <div class="four-col" style="margin-bottom:20px;" id="kpi-minis"></div>
 
   <div class="section-title">Financial Performance</div>
-  <div class="three-col" style="margin-bottom:20px;">
-    <div class="win-card">
-      <div style="font-size:24px;margin-bottom:8px;">💰</div>
-      <div class="win-title">$55,007 in Cancel Rate Savings</div>
-      <div class="win-body">An <strong>8.1 percentage point</strong> reduction in 30-day cancel rate on orders with labor booked, measured against the same agent's orders without labor. Up from $34,468 last week — savings continue to accelerate as more agents activate.</div>
-    </div>
-    <div class="proj-card">
-      <div class="proj-label">Annualized — Current Pilot (26 active agents)</div>
-      <div class="proj-val">$408,625</div>
-      <div class="proj-sub">Monthly savings × 12 at current run rate</div>
-    </div>
-    <div class="proj-card">
-      <div class="proj-label">Projected Full Rollout (~220 agents)</div>
-      <div class="proj-val">~$3.46M</div>
-      <div class="proj-sub">Avg savings/active agent × 220 × 12</div>
-    </div>
-  </div>
+  <div class="three-col" style="margin-bottom:20px;" id="financial-cards"></div>
 
   <div class="section-title">Cancel Rate Impact</div>
   <div class="card" style="margin-bottom:20px;">
-    <div class="net-stat-row">
-      <div class="net-stat">
-        <div class="net-stat-label">7-Day Delta</div>
-        <div class="net-stat-val">−6.3pp</div>
-      </div>
-      <div class="net-stat">
-        <div class="net-stat-label">30-Day Delta</div>
-        <div class="net-stat-val">−8.1pp</div>
-      </div>
-      <div class="net-stat">
-        <div class="net-stat-label">Cumulative Net Savings</div>
-        <div class="net-stat-val">$55,007</div>
-      </div>
-      <div class="net-stat">
-        <div class="net-stat-label">Annualized (26 active)</div>
-        <div class="net-stat-val">$408,625</div>
-      </div>
-    </div>
+    <div class="net-stat-row" id="cancel-stats"></div>
     <div style="font-size:11px;color:var(--gray-text);line-height:1.6;padding-top:6px;border-top:1px solid var(--gray-border);">Reported at the program level only. Individual agent-level cancel deltas carry high variance at current sample sizes — a single cancellation either way can swing a low-volume agent's number significantly — so these are normalized over time before being surfaced by name.</div>
   </div>
 
   <div class="section-title">Top Performers</div>
-  <div class="two-col">
-    <div class="card">
-      <div class="card-title">🥇 Leaders by Labor Booked</div>
-      <div class="star-agent">
-        <div class="agent-rank" style="background:#b45309;color:white;">1</div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Catherine Saitta</div><div style="font-size:11px;color:var(--gray-text);">Sales · CLW</div></div>
-        <div class="agent-stat"><div class="agent-stat-val">21</div><div class="agent-stat-label">booked · 60.0% conv</div></div>
-      </div>
-      <div class="star-agent">
-        <div class="agent-rank" style="background:var(--blue);color:white;">2</div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Jeanielle Navarro</div><div style="font-size:11px;color:var(--gray-text);">SST · CNX</div></div>
-        <div class="agent-stat"><div class="agent-stat-val">17</div><div class="agent-stat-label">booked · 32.1% conv</div></div>
-      </div>
-      <div class="star-agent">
-        <div class="agent-rank">3</div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Amy Sisterman</div><div style="font-size:11px;color:var(--gray-text);">Sales · CLW</div></div>
-        <div class="agent-stat"><div class="agent-stat-val">16</div><div class="agent-stat-label">booked · 29.6% conv</div></div>
-      </div>
-      <div class="star-agent">
-        <div class="agent-rank">4</div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Ted Johnson</div><div style="font-size:11px;color:var(--gray-text);">Sales · CLW</div></div>
-        <div class="agent-stat"><div class="agent-stat-val">12</div><div class="agent-stat-label">booked · 41.4% conv</div></div>
-      </div>
-      <div class="star-agent">
-        <div class="agent-rank">5</div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Carmie Nillama</div><div style="font-size:11px;color:var(--gray-text);">SST · CNX</div></div>
-        <div class="agent-stat"><div class="agent-stat-val">11</div><div class="agent-stat-label">booked · 28.9% conv</div></div>
-      </div>
-      <div class="star-agent">
-        <div class="agent-rank">6</div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:600;">Johnny Cardinale</div><div style="font-size:11px;color:var(--gray-text);">SST · CLW</div></div>
-        <div class="agent-stat"><div class="agent-stat-val">9</div><div class="agent-stat-label">booked · 31.0% conv</div></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">📈 26.7% Quote-to-Order Conversion</div>
-      <div style="font-size:12px;color:var(--gray-text);line-height:1.7;margin-bottom:12px;">Nearly <strong>3 in 10 customers quoted</strong> are booking labor. Sales leads at 29.5% conversion, SST at 27.5%. Catherine Saitta sets the benchmark at 60.0% — more than double the program average.</div>
-      <div style="border-top:1px solid var(--gray-border);padding-top:12px;">
-        <div class="card-title">🚀 Trajectory</div>
-        <div style="font-size:12px;color:var(--gray-text);line-height:1.7;">Bookings grew from 124 → 142 this week (+18), quotes from 475 → 552 (+77). Cancel savings jumped $20K week-over-week — from $34,468 to $55,007 — as more high-volume agents crossed into active status.</div>
-      </div>
-    </div>
-  </div>
+  <div class="two-col" id="top-performers"></div>
 
 </div>
 
@@ -237,46 +137,203 @@ body { font-family: 'Barlow', sans-serif; background: var(--gray-bg); color: var
   <div class="section-title">Missed Opportunity by Department</div>
   <div class="alert info" style="margin-bottom:16px;">
     <div class="alert-icon">💡</div>
-    <div>Assumes 50% of container orders are labor-addressable and applies the program's 26.7% quote-to-order conversion rate to estimate missed orders from silent agents.</div>
+    <div>Assumes 50% of container orders are labor-addressable and applies the program's <span id="opp-conv-rate"></span> quote-to-order conversion rate to estimate missed orders from silent agents.</div>
   </div>
 
   <div class="card" style="margin-bottom:20px;">
-    <div class="opp-grid">
-      <div class="opp-cell hdr">Department</div><div class="opp-cell hdr r">Silent Agents</div><div class="opp-cell hdr r">Est. Containers (Silent)</div><div class="opp-cell hdr r">Est. Missed Orders/Mo</div><div class="opp-cell hdr r">Priority</div>
-      <div class="opp-cell"><strong>OB</strong><br><span style="font-size:11px;color:var(--gray-text);">All 43 fully trained</span></div>
-      <div class="opp-cell r">26</div><div class="opp-cell r">~3,320</div>
-      <div class="opp-cell r" style="font-weight:700;color:var(--red);">~442</div>
-      <div class="opp-cell r"><div class="priority"><div class="dot dot-red"></div> <strong style="color:var(--red);">Critical</strong></div></div>
-      <div class="opp-cell"><strong>Sales</strong><br><span style="font-size:11px;color:var(--gray-text);">7 silent, all at CLW</span></div>
-      <div class="opp-cell r">7</div><div class="opp-cell r">~1,401</div>
-      <div class="opp-cell r" style="font-weight:700;color:var(--amber);">~187</div>
-      <div class="opp-cell r"><div class="priority"><div class="dot dot-amber"></div> <strong style="color:#92400e;">High</strong></div></div>
-      <div class="opp-cell" style="border-bottom:none;"><strong>SST</strong><br><span style="font-size:11px;color:var(--gray-text);">3 silent, all at CNX</span></div>
-      <div class="opp-cell r" style="border-bottom:none;">3</div><div class="opp-cell r" style="border-bottom:none;">~361</div>
-      <div class="opp-cell r" style="border-bottom:none;font-weight:700;color:var(--blue);">~48</div>
-      <div class="opp-cell r" style="border-bottom:none;"><div class="priority"><div class="dot dot-green"></div> <strong style="color:var(--green);">Moderate</strong></div></div>
-    </div>
+    <div class="opp-grid" id="opp-table"></div>
   </div>
 
   <div class="section-title">Recommended Actions</div>
-  <div class="three-col">
-    <div class="card">
-      <div class="card-title">🎯 OB Compliance Push</div>
-      <div style="font-size:12px;color:var(--gray-text);line-height:1.7;">26 trained OB agents still aren't pitching. This remains a coaching and accountability issue, not a training gap — all 43 are fully trained. Moving just <strong style="color:var(--navy);">10 agents to active</strong> would add an estimated ~40 monthly labor orders. Recommend immediate team lead intervention.</div>
-    </div>
-    <div class="card">
-      <div class="card-title">📈 Bell Conversion Coaching</div>
-      <div style="font-size:12px;color:var(--gray-text);line-height:1.7;">Gregory Bell has generated 43 quotes but converts at only 7.0%. Catherine Saitta converts at 60.0% on comparable volume. Bell has the pipeline — a peer coaching session focused on close technique could meaningfully lift output without increasing pitch activity.</div>
-    </div>
-    <div class="card">
-      <div class="card-title">📍 CNX Location Focus</div>
-      <div style="font-size:12px;color:var(--gray-text);line-height:1.7;">CNX accounts for 23 of 36 silent agents across departments (20 OB + 3 SST). A site-level conversation with CNX management may be more efficient than individual agent coaching and could unlock the largest remaining block of adoption.</div>
-    </div>
-  </div>
+  <div class="three-col" id="recommended-actions"></div>
 
 </div>
 
 <script>
+// ── Header ───────────────────────────────────────────────────────────────────
+document.getElementById('hdr-updated').textContent = 'Updated ' + IL_DATA.updated_date;
+
+// ── Summary banner ───────────────────────────────────────────────────────────
+document.getElementById('summary-banner').innerHTML =
+  `<div class="alert-icon">🏆</div>
+   <div><strong>Cumulative Summary:</strong> Since launch, the program has generated <strong>${IL_DATA.total_quotes.toLocaleString()} labor quotes</strong>, booked <strong>${IL_DATA.total_orders.toLocaleString()} labor orders</strong>, and produced <strong>$${IL_DATA.cancel_savings.toLocaleString()} in measurable cancel rate savings</strong> — with ${IL_DATA.active_agents} of ${IL_DATA.total_agents} agents actively quoting labor.</div>`;
+
+// ── KPI minis ────────────────────────────────────────────────────────────────
+const adoptionPct = (IL_DATA.active_agents / IL_DATA.total_agents * 100).toFixed(1);
+document.getElementById('kpi-minis').innerHTML = `
+  <div class="kpi-mini">
+    <div class="kpi-mini-val">${IL_DATA.total_quotes.toLocaleString()}</div>
+    <div class="kpi-mini-label">Labor Quotes</div>
+    <div class="kpi-mini-sub">Since launch</div>
+  </div>
+  <div class="kpi-mini">
+    <div class="kpi-mini-val">${IL_DATA.total_orders.toLocaleString()}</div>
+    <div class="kpi-mini-label">Labor Orders Booked</div>
+    <div class="kpi-mini-sub">Since launch</div>
+  </div>
+  <div class="kpi-mini">
+    <div class="kpi-mini-val green">${IL_DATA.conv_rate.toFixed(1)}%</div>
+    <div class="kpi-mini-label">Quote → Order Conv.</div>
+    <div class="kpi-mini-sub">~3 in 10 quoted customers book</div>
+  </div>
+  <div class="kpi-mini">
+    <div class="kpi-mini-val">${IL_DATA.active_agents} / ${IL_DATA.total_agents}</div>
+    <div class="kpi-mini-label">Agents Active</div>
+    <div class="kpi-mini-sub">${adoptionPct}% adoption rate</div>
+  </div>`;
+
+// ── Financial cards ──────────────────────────────────────────────────────────
+(function() {
+  const savingsWoW = IL_DATA.cancel_savings - IL_DATA.prev_savings;
+  const wowText = savingsWoW > 0
+    ? `Up from $${IL_DATA.prev_savings.toLocaleString()} last week — savings continue to accelerate as more agents activate.`
+    : `$${IL_DATA.prev_savings.toLocaleString()} last week.`;
+  const cancelAbs = Math.abs(IL_DATA.cancel_delta_30d);
+
+  document.getElementById('financial-cards').innerHTML = `
+    <div class="win-card">
+      <div style="font-size:24px;margin-bottom:8px;">💰</div>
+      <div class="win-title">$${IL_DATA.cancel_savings.toLocaleString()} in Cancel Rate Savings</div>
+      <div class="win-body">An <strong>${cancelAbs} percentage point</strong> reduction in 30-day cancel rate on orders with labor booked, measured against the same agent's orders without labor. ${wowText}</div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-label">Annualized — Current Pilot (${IL_DATA.active_agents} active agents)</div>
+      <div class="proj-val">$${IL_DATA.annualized_savings.toLocaleString()}</div>
+      <div class="proj-sub">Monthly savings × 12 at current run rate</div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-label">Projected Full Rollout (~${IL_DATA.projected_rollout_agents} agents)</div>
+      <div class="proj-val">${IL_DATA.projected_rollout_savings}</div>
+      <div class="proj-sub">Avg savings/active agent × ${IL_DATA.projected_rollout_agents} × 12</div>
+    </div>`;
+})();
+
+// ── Cancel stats ─────────────────────────────────────────────────────────────
+document.getElementById('cancel-stats').innerHTML = `
+  <div class="net-stat"><div class="net-stat-label">7-Day Delta</div><div class="net-stat-val">${IL_DATA.cancel_delta_7d < 0 ? '−' : '+'}${Math.abs(IL_DATA.cancel_delta_7d)}pp</div></div>
+  <div class="net-stat"><div class="net-stat-label">30-Day Delta</div><div class="net-stat-val">${IL_DATA.cancel_delta_30d < 0 ? '−' : '+'}${Math.abs(IL_DATA.cancel_delta_30d)}pp</div></div>
+  <div class="net-stat"><div class="net-stat-label">Cumulative Net Savings</div><div class="net-stat-val">$${IL_DATA.cancel_savings.toLocaleString()}</div></div>
+  <div class="net-stat"><div class="net-stat-label">Annualized (${IL_DATA.active_agents} active)</div><div class="net-stat-val">$${IL_DATA.annualized_savings.toLocaleString()}</div></div>`;
+
+// ── Top performers ───────────────────────────────────────────────────────────
+(function() {
+  const top6 = [...IL_DATA.agents]
+    .filter(a => a.booked > 0)
+    .sort((a, b) => b.booked - a.booked || b.quoted - a.quoted)
+    .slice(0, 6);
+
+  const rankColors = ['#b45309', 'var(--blue)', '', '', '', ''];
+  let leadersHtml = '';
+  top6.forEach((a, i) => {
+    const conv = a.quoted > 0 ? (a.booked / a.quoted * 100).toFixed(1) : '0.0';
+    const bg   = rankColors[i] ? `background:${rankColors[i]};color:white;` : '';
+    leadersHtml += `<div class="star-agent">
+      <div class="agent-rank" style="${bg}">${i + 1}</div>
+      <div style="flex:1;"><div style="font-size:13px;font-weight:600;">${a.name}</div><div style="font-size:11px;color:var(--gray-text);">${a.dept} · ${a.loc}</div></div>
+      <div class="agent-stat"><div class="agent-stat-val">${a.booked}</div><div class="agent-stat-label">booked · ${conv}% conv</div></div>
+    </div>`;
+  });
+
+  // Trajectory — new vs prev
+  const newOrders = IL_DATA.total_orders - IL_DATA.prev_orders;
+  const newQuotes = IL_DATA.total_quotes - IL_DATA.prev_quotes;
+  const savingsJump = IL_DATA.cancel_savings - IL_DATA.prev_savings;
+
+  // Top converter for coaching note
+  const topConv = [...IL_DATA.agents].filter(a => a.booked > 0)
+    .sort((a, b) => (b.booked/b.quoted) - (a.booked/a.quoted))[0];
+  const topConvPct = topConv ? (topConv.booked / topConv.quoted * 100).toFixed(1) : '';
+  const convRate = IL_DATA.conv_rate.toFixed(1);
+
+  document.getElementById('top-performers').innerHTML = `
+    <div class="card">
+      <div class="card-title">🥇 Leaders by Labor Booked</div>
+      ${leadersHtml}
+    </div>
+    <div class="card">
+      <div class="card-title">📈 ${convRate}% Quote-to-Order Conversion</div>
+      <div style="font-size:12px;color:var(--gray-text);line-height:1.7;margin-bottom:12px;">Nearly <strong>${Math.round(IL_DATA.conv_rate / 10)} in 10 customers quoted</strong> are booking labor. Sales leads at ${IL_DATA.depts.Sales.conv_rate}% conversion, SST at ${IL_DATA.depts.SST.conv_rate}%. ${topConv ? topConv.name + ' sets the benchmark at ' + topConvPct + '% — more than double the program average.' : ''}</div>
+      <div style="border-top:1px solid var(--gray-border);padding-top:12px;">
+        <div class="card-title">🚀 Trajectory</div>
+        <div style="font-size:12px;color:var(--gray-text);line-height:1.7;">Bookings grew from ${IL_DATA.prev_orders} → ${IL_DATA.total_orders} this week (+${newOrders}), quotes from ${IL_DATA.prev_quotes} → ${IL_DATA.total_quotes} (+${newQuotes}). ${savingsJump > 0 ? 'Cancel savings jumped $' + savingsJump.toLocaleString() + ' week-over-week — from $' + IL_DATA.prev_savings.toLocaleString() + ' to $' + IL_DATA.cancel_savings.toLocaleString() + ' — as more high-volume agents crossed into active status.' : ''}</div>
+      </div>
+    </div>`;
+})();
+
+// ── Opportunity tab ──────────────────────────────────────────────────────────
+document.getElementById('opp-conv-rate').textContent = IL_DATA.conv_rate.toFixed(1) + '%';
+
+(function() {
+  const priorityConfig = {
+    Critical: { dot: 'dot-red',   color: 'var(--red)',   label: 'Critical', valStyle: 'color:var(--red);' },
+    High:     { dot: 'dot-amber', color: 'var(--amber)',  label: 'High',     valStyle: 'color:var(--amber);' },
+    Moderate: { dot: 'dot-green', color: 'var(--green)',  label: 'Moderate', valStyle: 'color:var(--blue);' },
+  };
+
+  let rows = `
+    <div class="opp-cell hdr">Department</div>
+    <div class="opp-cell hdr r">Silent Agents</div>
+    <div class="opp-cell hdr r">Est. Containers (Silent)</div>
+    <div class="opp-cell hdr r">Est. Missed Orders/Mo</div>
+    <div class="opp-cell hdr r">Priority</div>`;
+
+  IL_DATA.opp_table.forEach((row, i) => {
+    const cfg = priorityConfig[row.priority];
+    const isLast = i === IL_DATA.opp_table.length - 1;
+    const border = isLast ? 'border-bottom:none;' : '';
+    rows += `
+      <div class="opp-cell" style="${border}"><strong>${row.dept}</strong><br><span style="font-size:11px;color:var(--gray-text);">${row.desc}</span></div>
+      <div class="opp-cell r" style="${border}">${row.silent}</div>
+      <div class="opp-cell r" style="${border}">${row.est_containers}</div>
+      <div class="opp-cell r" style="${border};font-weight:700;${cfg.valStyle}">${row.est_missed}</div>
+      <div class="opp-cell r" style="${border}"><div class="priority"><div class="dot ${cfg.dot}"></div> <strong style="color:${cfg.color};">${cfg.label}</strong></div></div>`;
+  });
+  document.getElementById('opp-table').innerHTML = rows;
+})();
+
+// ── Recommended actions ──────────────────────────────────────────────────────
+(function() {
+  // Find high-quote low-conv agent for coaching note
+  const coachingTarget = [...IL_DATA.agents]
+    .filter(a => a.quoted >= 30 && a.booked > 0)
+    .sort((a, b) => (a.booked/a.quoted) - (b.booked/b.quoted))[0];
+
+  // Find top converter for comparison
+  const topConverter = [...IL_DATA.agents]
+    .filter(a => a.booked > 0)
+    .sort((a, b) => (b.booked/b.quoted) - (a.booked/a.quoted))[0];
+
+  const obDept = IL_DATA.depts.OB;
+  const obSilent = obDept.total - obDept.active;
+
+  const cnxSilent = IL_DATA.silent_grid
+    .filter(g => g.loc === 'CNX')
+    .reduce((sum, g) => sum + g.silent, 0);
+  const cnxTotal = IL_DATA.silent_grid
+    .filter(g => g.loc === 'CNX')
+    .reduce((sum, g) => sum + g.silent, 0);
+
+  const coachName    = coachingTarget ? coachingTarget.name : 'top quoting agent';
+  const coachQuoted  = coachingTarget ? coachingTarget.quoted : 0;
+  const coachConv    = coachingTarget ? (coachingTarget.booked / coachingTarget.quoted * 100).toFixed(1) : '0.0';
+  const topConvPct   = topConverter   ? (topConverter.booked  / topConverter.quoted  * 100).toFixed(1) : '0.0';
+  const topConvName  = topConverter   ? topConverter.name : '';
+
+  document.getElementById('recommended-actions').innerHTML = `
+    <div class="card">
+      <div class="card-title">🎯 OB Compliance Push</div>
+      <div style="font-size:12px;color:var(--gray-text);line-height:1.7;">${obSilent} trained OB agents still aren't pitching. This remains a coaching and accountability issue, not a training gap — all ${obDept.total} are fully trained. Moving just <strong style="color:var(--navy);">10 agents to active</strong> would add an estimated ~40 monthly labor orders. Recommend immediate team lead intervention.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 ${coachName.split(' ')[0]} ${coachName.split(' ').slice(-1)[0]} Conversion Coaching</div>
+      <div style="font-size:12px;color:var(--gray-text);line-height:1.7;">${coachName} has generated ${coachQuoted} quotes but converts at only ${coachConv}%. ${topConvName} converts at ${topConvPct}% on comparable volume. ${coachName.split(' ')[0]} has the pipeline — a peer coaching session focused on close technique could meaningfully lift output without increasing pitch activity.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📍 CNX Location Focus</div>
+      <div style="font-size:12px;color:var(--gray-text);line-height:1.7;">CNX accounts for ${cnxSilent} of the silent agents across departments. A site-level conversation with CNX management may be more efficient than individual agent coaching and could unlock the largest remaining block of adoption.</div>
+    </div>`;
+})();
+
 function showTab(name, el) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
