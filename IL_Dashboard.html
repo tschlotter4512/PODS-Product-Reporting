@@ -299,8 +299,7 @@ td.r { text-align: right; } tr:last-child td { border-bottom: none; } tr:hover t
   <label>Status</label>
   <select class="agent-filter-select" id="filter-status" onchange="applyAgentFilters()">
     <option value="">All</option>
-    <option value="Active">Active (Booked)</option>
-    <option value="Quoting">Quoting Only</option>
+    <option value="Active">Active (Quoted)</option>
     <option value="Silent">Silent (0 quotes)</option>
   </select>
   <div class="agent-controls-spacer"></div>
@@ -493,7 +492,7 @@ document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.t
 
 // ── Agent table ──────────────────────────────────────────────────────────────
 const ALL_AGENTS = IL_DATA.agents.map(a => {
-  const status = a.booked > 0 ? 'Active' : a.quoted > 0 ? 'Quoting' : 'Silent';
+  const status = a.quoted > 0 ? 'Active' : 'Silent';
   const conv   = a.quoted > 0 ? (a.booked / a.quoted * 100) : null;
   return { ...a, status, conv };
 });
