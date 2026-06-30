@@ -473,11 +473,10 @@ document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.t
     { key: 'Sales', color: 'var(--navy)',  max_pct: 100 },
     { key: 'OB',    color: 'var(--red)',   max_pct: 100 },
   ];
-  const maxPitch = Math.max(...depts.map(d => IL_DATA.depts[d.key].pitch_rate));
   let html = '';
   depts.forEach(d => {
     const ds = IL_DATA.depts[d.key];
-    const barW = (ds.pitch_rate / maxPitch * 100).toFixed(1);
+    const barW = ds.pitch_rate.toFixed(1);
     html += `<div>
       <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:5px;">
         <span style="font-size:13px;font-weight:600;">${d.key}</span>
