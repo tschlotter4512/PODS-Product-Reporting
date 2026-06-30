@@ -304,8 +304,8 @@ def read_cancel_rate_from_tableau_csv(csv_path, o_by_roster):
     if total_weight == 0:
         raise ValueError("No IL agents with labor cancel data found in the CSV.")
 
-    delta_7d  = round(w7  / total_weight * 100, 4)
-    delta_30d = round(w30 / total_weight * 100, 4)
+    delta_7d  = round(w7  / total_weight * 100, 1)
+    delta_30d = round(w30 / total_weight * 100, 1)
     savings   = round(abs(delta_30d) / 100 * total_weight * AVG_CTR_PER_ORDER * ECR)
 
     return {"delta_7d": delta_7d, "delta_30d": delta_30d, "savings": savings}
