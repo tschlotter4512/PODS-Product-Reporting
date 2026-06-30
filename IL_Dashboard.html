@@ -430,7 +430,7 @@ document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.t
         <div><div class="dept-stat-label"><span class="metric-label">Labor Quoted<span class="tooltip-text">Total number of labor quotes presented since launch.</span></span></div>
           <div class="dept-stat-val">${ds.quotes}</div></div>
         <div><div class="dept-stat-label"><span class="metric-label">Pitch Rate<span class="tooltip-text">Labor quotes as a % of total container orders handled.</span></span></div>
-          <div class="dept-stat-val">${ds.pitch_rate}%</div></div>
+          <div class="dept-stat-val">${ds.pitch_rate.toFixed(1)}%</div></div>
         <div><div class="dept-stat-label"><span class="metric-label">Conv. Rate<span class="tooltip-text">Percentage of labor quotes that resulted in a booked order.</span></span></div>
           <div class="dept-stat-val hl">${ds.conv_rate}%</div></div>
       </div>
@@ -481,7 +481,7 @@ document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.t
     html += `<div>
       <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:5px;">
         <span style="font-size:13px;font-weight:600;">${d.key}</span>
-        <span style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:${d.color};">${ds.pitch_rate}%</span>
+        <span style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:${d.color};">${ds.pitch_rate.toFixed(1)}%</span>
       </div>
       <div class="progress-bar" style="height:10px;"><div class="progress-fill" style="width:${barW}%;background:${d.color};"></div></div>
       <div style="font-size:10px;color:var(--gray-text);margin-top:3px;">${ds.quotes} quotes · ${ds.orders} booked · ${ds.conv_rate}% conv</div>
