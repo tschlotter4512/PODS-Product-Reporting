@@ -244,52 +244,71 @@ def process_hah_csvs(quotes_path, orders_path):
     all_hah_names = set(q_by_agent.keys()) | set(o_by_agent.keys())
     return q_by_agent, o_by_agent, all_hah_names
 
-# ── Cancel rate from IL Reporting Excel ────────────────────────────────────────
-def read_cancel_rate_from_excel(excel_path):
-    """Read the 3 cancel rate values from the Management Summary sheet."""
-    xl = pd.ExcelFile(excel_path)
-    sheet_name = next(
-        (s for s in xl.sheet_names if "management" in s.lower() or "summary" in s.lower()),
-        xl.sheet_names[0]
-    )
-    df = xl.parse(sheet_name, header=None)
+# ── Cancel rate from Tableau Labor Impact Table CSV ────────────────────────────
+def read_cancel_rate_from_tableau_csv(csv_path, o_by_roster):
+    """Compute weighted cancel rate delta from the Tableau 'Labor Impact Table' CSV.
 
-    delta_7d = delta_30d = savings = None
-    for _, row in df.iterrows():
-        for ci, cell in enumerate(row):
-            if not isinstance(cell, str):
-                continue
-            cell_l = cell.lower()
-            if "7 day cancel rate" in cell_l or "7-day cancel rate" in cell_l:
-                val = _next_numeric(row, ci)
-                if val is not None:
-                    delta_7d = round(val * 100, 4)   # stored as decimal (e.g. -0.06307) → %-pts
-            elif "30 day cancel rate" in cell_l or "30-day cancel rate" in cell_l:
-                val = _next_numeric(row, ci)
-                if val is not None:
-                    delta_30d = round(val * 100, 4)
-            elif "cancel rate savings" in cell_l or "cancel savings" in cell_l:
-                val = _next_numeric(row, ci)
-                if val is not None:
-                    savings = round(val)
+    Weights each IL agent's (labor - regular) cancel rate delta by their labor
+    order count from the HaH Orders CSV, matching the Excel methodology.
+    """
+    for enc in ("utf-16", "utf-8", "latin-1"):
+        try:
+            df = pd.read_csv(csv_path, encoding=enc, sep="\t")
+            if len(df.columns) >= 6:
+                break
+        except Exception:
+            continue
+    df.columns = [c.strip() for c in df.columns]
 
-    if delta_7d is None or delta_30d is None or savings is None:
+    name_col = next((c for c in df.columns if "agent" in c.lower() and "name" in c.lower()), None)
+    r7_col   = next((c for c in df.columns if "regular" in c.lower() and "7" in c), None)
+    l7_col   = next((c for c in df.columns if "labor" in c.lower() and "7" in c.lower()), None)
+    r30_col  = next((c for c in df.columns if "regular" in c.lower() and "30" in c), None)
+    l30_col  = next((c for c in df.columns if "labor" in c.lower() and "30" in c.lower()), None)
+
+    if not all([name_col, r7_col, l7_col, r30_col, l30_col]):
         raise ValueError(
-            f"Could not find all 3 cancel rate values in '{sheet_name}' sheet. "
-            f"Found: delta_7d={delta_7d}, delta_30d={delta_30d}, savings={savings}. "
-            "Make sure Management Summary sheet has '7 Day Cancel Rate Impact', "
-            "'30 Day Cancel Rate Impact', and 'Cancel Rate Savings' labels."
+            f"Could not find required columns in {csv_path}.\n"
+            f"Found columns: {list(df.columns)}\n"
+            "Expected: AGENT_NAME, Regular Container CR 7-Day, Labor Container CR 7-Day, "
+            "Regular Container CR 30-Day, Labor Container Cancel Rate 30"
         )
 
+    def pct(v):
+        if pd.isna(v) or str(v).strip() in ("", "nan"):
+            return None
+        try:
+            return float(str(v).strip().replace("%", "")) / 100
+        except Exception:
+            return None
+
+    roster_names = list(DEPT_MAP.keys())
+    w7 = w30 = total_weight = 0.0
+
+    for _, row in df.iterrows():
+        agent_name = str(row[name_col]).strip()
+        matched = fuzzy_match(agent_name, roster_names)
+        if not matched:
+            continue
+        l7  = pct(row[l7_col])
+        r7  = pct(row[r7_col])
+        l30 = pct(row[l30_col])
+        r30 = pct(row[r30_col])
+        if l7 is None or r7 is None or l30 is None or r30 is None:
+            continue
+        weight = o_by_roster.get(matched, 0) or 1  # fall back to 1 so agent isn't dropped
+        w7           += (l7  - r7)  * weight
+        w30          += (l30 - r30) * weight
+        total_weight += weight
+
+    if total_weight == 0:
+        raise ValueError("No IL agents with labor cancel data found in the CSV.")
+
+    delta_7d  = round(w7  / total_weight * 100, 4)
+    delta_30d = round(w30 / total_weight * 100, 4)
+    savings   = round(abs(delta_30d) / 100 * total_weight * AVG_CTR_PER_ORDER * ECR)
+
     return {"delta_7d": delta_7d, "delta_30d": delta_30d, "savings": savings}
-
-
-def _next_numeric(row, start_idx):
-    """Return the first numeric value in the row after start_idx."""
-    for v in row.iloc[start_idx + 1:]:
-        if isinstance(v, (int, float)) and not pd.isna(v):
-            return v
-    return None
 
 # ── Load previous agent data from il_data.js ──────────────────────────────────
 def load_existing_agents():
@@ -577,32 +596,20 @@ def main():
     orders_path = pick_file("Select HaH Orders CSV — cumulative since 5/1/26")
     print(f"  ✓ {os.path.basename(orders_path)}")
 
-    print("Select the IL Reporting Excel (e.g. 'Integrated Labor Reporting 6.29.26.xlsx')...")
-    excel_path = pick_file(
-        "Select IL Reporting Excel",
-        filetypes=[("Excel files", "*.xlsx *.xlsm *.xls"), ("All files", "*.*")]
+    print("Select the Tableau Labor Impact Table CSV...")
+    tableau_csv_path = pick_file(
+        "Select Tableau Labor Impact Table CSV",
+        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
     )
-    print(f"  ✓ {os.path.basename(excel_path)}")
+    print(f"  ✓ {os.path.basename(tableau_csv_path)}")
 
     # Process HaH CSVs
     print("\n[1/4] Processing HaH CSVs...")
     q_by_agent, o_by_agent, all_hah_names = process_hah_csvs(quotes_path, orders_path)
     print(f"  {len(all_hah_names)} unique agents across quotes + orders")
 
-    # Cancel rate from Excel
-    print("\n[2/4] Reading cancel rate from IL Reporting Excel...")
-    try:
-        cancel_data = read_cancel_rate_from_excel(excel_path)
-        print(f"  7d delta: {cancel_data['delta_7d']}pp | 30d delta: {cancel_data['delta_30d']}pp | savings: ${cancel_data['savings']:,}")
-    except Exception as e:
-        import traceback
-        print(f"  WARNING: Could not read cancel rate from Excel:")
-        traceback.print_exc()
-        print("  Keeping existing cancel rate values from il_data.js")
-        cancel_data = load_existing_cancel_data()
-
     # Build agent data
-    print("\n[3/4] Building agent data...")
+    print("\n[2/4] Building agent data...")
     prev_agents = load_existing_agents()
     agents      = build_agents(q_by_agent, o_by_agent, all_hah_names, prev_agents)
     dept_stats  = compute_dept_stats(agents)
@@ -611,6 +618,18 @@ def main():
     print(f"  {active} active / {total} total agents")
     for dept, ds in dept_stats.items():
         print(f"    {dept}: {ds['active']}/{ds['total']} active, {ds['quotes']} quotes, {ds['orders']} orders")
+
+    # Cancel rate from Tableau CSV (weighted by each agent's labor order count)
+    print("\n[3/4] Computing cancel rate from Tableau CSV...")
+    o_by_roster = {a["name"]: a["booked"] for a in agents}
+    try:
+        cancel_data = read_cancel_rate_from_tableau_csv(tableau_csv_path, o_by_roster)
+        print(f"  7d delta: {cancel_data['delta_7d']}pp | 30d delta: {cancel_data['delta_30d']}pp | savings: ${cancel_data['savings']:,}")
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        print("  Keeping existing cancel rate values from il_data.js")
+        cancel_data = load_existing_cancel_data()
 
     # Load previous totals for trajectory narrative
     prev_orders, prev_quotes, prev_savings, _, _ = load_prev_totals()
@@ -634,7 +653,7 @@ def main():
         print(f"    {w['week']}: {w['quotes']} quotes, {w['orders']} orders")
 
     # Generate content
-    print("\n[4/4] Writing and pushing files...")
+    print("\n[4/4] Writing and pushing...")
     il_data_content = build_il_data_js(
         end_date, agents, dept_stats, cancel_data,
         weekly_trends, prev_orders, prev_quotes, prev_savings
