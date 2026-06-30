@@ -335,14 +335,14 @@ document.getElementById('hdr-updated').textContent = 'Updated ' + IL_DATA.update
 document.getElementById('kpi-orders').textContent  = IL_DATA.total_orders.toLocaleString();
 document.getElementById('kpi-quotes').textContent  = IL_DATA.total_quotes.toLocaleString();
 document.getElementById('kpi-conv').textContent    = IL_DATA.conv_rate.toFixed(1) + '%';
-document.getElementById('kpi-cancel30').textContent = (IL_DATA.cancel_delta_30d < 0 ? '−' : '+') + Math.abs(IL_DATA.cancel_delta_30d) + 'pp';
+document.getElementById('kpi-cancel30').textContent = (IL_DATA.cancel_delta_30d < 0 ? '−' : '+') + Math.abs(IL_DATA.cancel_delta_30d).toFixed(1) + 'pp';
 document.getElementById('kpi-active').innerHTML    = IL_DATA.active_agents + '<span style="font-size:18px;color:#6b7a99"> / ' + IL_DATA.total_agents + '</span>';
 const adoptionPct = (IL_DATA.active_agents / IL_DATA.total_agents * 100).toFixed(1);
 document.getElementById('kpi-adoption-pct').textContent = adoptionPct + '% adoption rate';
 
 // ── Cancel / attach rate ─────────────────────────────────────────────────────
-document.getElementById('cancel-7d').textContent   = (IL_DATA.cancel_delta_7d < 0 ? '−' : '+') + Math.abs(IL_DATA.cancel_delta_7d) + 'pp';
-document.getElementById('cancel-30d').textContent  = (IL_DATA.cancel_delta_30d < 0 ? '−' : '+') + Math.abs(IL_DATA.cancel_delta_30d) + 'pp';
+document.getElementById('cancel-7d').textContent   = (IL_DATA.cancel_delta_7d < 0 ? '−' : '+') + Math.abs(IL_DATA.cancel_delta_7d).toFixed(1) + 'pp';
+document.getElementById('cancel-30d').textContent  = (IL_DATA.cancel_delta_30d < 0 ? '−' : '+') + Math.abs(IL_DATA.cancel_delta_30d).toFixed(1) + 'pp';
 document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.toFixed(1) + '%';
 
 // ── Adoption bars ────────────────────────────────────────────────────────────
