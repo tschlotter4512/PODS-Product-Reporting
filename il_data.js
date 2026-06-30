@@ -30,9 +30,9 @@ const IL_DATA = {
 
   // Department breakdown
   depts: {
-    Sales: { total: 15, active: 8, orders: 65, quotes: 222, pitch_rate: 0, conv_rate: 29.3 },
-    SST:   { total: 18,   active: 15,   orders: 72,   quotes: 266,   pitch_rate: 0,   conv_rate: 27.1   },
-    OB:    { total: 43,    active: 17,    orders: 16,    quotes: 123,    pitch_rate: 0,    conv_rate: 13.0    },
+    Sales: { total: 15, active: 8, orders: 65, quotes: 222, pitch_rate: 20.0, conv_rate: 29.3 },
+    SST:   { total: 18,   active: 15,   orders: 72,   quotes: 266,   pitch_rate: 28.3,   conv_rate: 27.1   },
+    OB:    { total: 43,    active: 17,    orders: 16,    quotes: 123,    pitch_rate: 14.6,    conv_rate: 13.0    },
   },
 
   // Silent agent breakdown by location + dept
