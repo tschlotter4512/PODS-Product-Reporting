@@ -11,6 +11,7 @@ import tkinter as tk
 from tkinter import filedialog
 import pandas as pd
 import requests
+import snowflake.connector
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 CONFIG_PATH = r"F:\Revenue Management\Team Individual Folders\TSchlotter\PODS-Product-Reporting\config.json"
@@ -103,9 +104,46 @@ DEPT_MAP = {
 }
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
+# ── Agent username map: canonical name → ORDER_CONTAINER_SALES_FACT "Agent Container Booked By" ──
+AGENT_USERNAME_MAP = {
+    "Amy Sisterman":          "AMSisterman",
+    "Catherine Saitta":       "CSaitta",
+    "Ted Johnson":            "TWJohnson",
+    "Carmie Nillama":         "CNillama",
+    "Jeanielle Navarro":      "JNavarro2",
+    "Johnny Cardinale":       "JCardinale",
+    "Donald Alfaro":          "dalfaro",
+    "Nicole Slater":          "NHSlater",
+    "Felicia Knight":         "fknight",
+    "Kimberly Thebeau":       "KThebeau",
+    "Ednalyn Mirandilla":     "EMirandilla",
+    "Almira Castro":          "ACastro3",
+    "Katleen May Castro":     "KMCastro",
+    "Charmaine Bacay":        "CBacay",
+    "Sara Messenger":         "SMessenger",
+    "Christina Morales":      "cmorales",
+    "Christopher Monaldi":    "CMonaldi",
+    "Jake Russel Bernardino": "JRBernardino",
+    "Irish Verona":           "IVerona",
+    "James Onnagan":          "JOnnagan",
+    "James Rebualos":         "JRebualos",
+    "Jerico Galve":           "JGalve",
+    "Princess Heidi Sesma":   "PHSesma",
+}
+
 def load_config():
     with open(CONFIG_PATH) as f:
         return json.load(f)
+
+def get_snowflake_conn(cfg):
+    return snowflake.connector.connect(
+        user=cfg["snowflake_user"],
+        account=cfg["snowflake_account"],
+        authenticator="externalbrowser",
+        warehouse="ELT_WH",
+        database="PROD_DW",
+        schema="DW_SEMANTIC",
+    )
 
 def gh_get(token, path):
     r = requests.get(
@@ -363,7 +401,26 @@ def build_agents(q_by_hah, o_by_hah, all_hah_names, prev_agents):
     agents.sort(key=lambda a: (-a["booked"], -a["quoted"], a["name"]))
     return agents
 
-def compute_dept_stats(agents):
+def q_total_orders_by_agent(conn, end_date):
+    """Query total orders per IL agent from ORDER_CONTAINER_SALES_FACT using username map."""
+    usernames = list(AGENT_USERNAME_MAP.values())
+    username_list = ", ".join(f"'{u}'" for u in usernames)
+    sql = f"""
+    SELECT "Agent Container Booked By", COUNT(DISTINCT "Order Number") AS total_orders
+    FROM PROD_DW.DW_SEMANTIC.ORDER_CONTAINER_SALES_FACT
+    WHERE "Date Order Booked" >= '{LAUNCH_DATE}'
+      AND "Date Order Booked" <= '{end_date}'
+      AND "Agent Container Booked By" IN ({username_list})
+    GROUP BY "Agent Container Booked By"
+    """
+    cur = conn.cursor()
+    cur.execute(sql)
+    username_to_orders = {row[0]: row[1] for row in cur.fetchall()}
+    # Reverse map: username → roster name
+    username_to_roster = {v: k for k, v in AGENT_USERNAME_MAP.items()}
+    return {username_to_roster[u]: cnt for u, cnt in username_to_orders.items() if u in username_to_roster}
+
+def compute_dept_stats(agents, total_orders_by_agent=None):
     stats = {}
     for dept in ("Sales", "SST", "OB"):
         grp = [a for a in agents if a["dept"] == dept]
@@ -371,11 +428,16 @@ def compute_dept_stats(agents):
         active = sum(1 for a in grp if a["quoted"] > 0)
         orders = sum(a["booked"] for a in grp)
         quotes = sum(a["quoted"] for a in grp)
+        if total_orders_by_agent:
+            dept_total_orders = sum(total_orders_by_agent.get(a["name"], 0) for a in grp)
+            pitch_rate = round(quotes / dept_total_orders * 100, 1) if dept_total_orders else 0
+        else:
+            pitch_rate = 0
         stats[dept] = {
             "total": total, "active": active,
             "orders": orders, "quotes": quotes,
             "conv_rate": round(orders / quotes * 100, 1) if quotes else 0,
-            "pitch_rate": 0,  # requires container orders denominator; leave 0 until Snowflake source added
+            "pitch_rate": pitch_rate,
         }
     return stats
 
@@ -608,11 +670,25 @@ def main():
     q_by_agent, o_by_agent, all_hah_names = process_hah_csvs(quotes_path, orders_path)
     print(f"  {len(all_hah_names)} unique agents across quotes + orders")
 
+    # Snowflake — total orders per agent for pitch rate
+    print("\n[2/4] Connecting to Snowflake for pitch rate (browser SSO will open)...")
+    total_orders_by_agent = {}
+    try:
+        conn = get_snowflake_conn(cfg)
+        print("  Connected.")
+        total_orders_by_agent = q_total_orders_by_agent(conn, end_date)
+        print(f"  Total orders by agent: {len(total_orders_by_agent)} agents mapped")
+        conn.close()
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        print("  WARNING: Snowflake query failed — pitch rate will show 0")
+
     # Build agent data
-    print("\n[2/4] Building agent data...")
+    print("\n[3/4] Building agent data...")
     prev_agents = load_existing_agents()
     agents      = build_agents(q_by_agent, o_by_agent, all_hah_names, prev_agents)
-    dept_stats  = compute_dept_stats(agents)
+    dept_stats  = compute_dept_stats(agents, total_orders_by_agent)
     active     = sum(1 for a in agents if a["quoted"] > 0)
     total      = len(agents)
     print(f"  {active} active / {total} total agents")
@@ -620,7 +696,7 @@ def main():
         print(f"    {dept}: {ds['active']}/{ds['total']} active, {ds['quotes']} quotes, {ds['orders']} orders")
 
     # Cancel rate from Tableau CSV (weighted by each agent's labor order count)
-    print("\n[3/4] Computing cancel rate from Tableau CSV...")
+    print("\n[4/5] Computing cancel rate from Tableau CSV...")
     o_by_roster = {a["name"]: a["booked"] for a in agents}
     try:
         cancel_data = read_cancel_rate_from_tableau_csv(tableau_csv_path, o_by_roster)
@@ -653,7 +729,7 @@ def main():
         print(f"    {w['week']}: {w['quotes']} quotes, {w['orders']} orders")
 
     # Generate content
-    print("\n[4/4] Writing and pushing...")
+    print("\n[5/5] Writing and pushing...")
     il_data_content = build_il_data_js(
         end_date, agents, dept_stats, cancel_data,
         weekly_trends, prev_orders, prev_quotes, prev_savings
