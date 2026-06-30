@@ -7,12 +7,10 @@ Run every Monday after downloading HaH Quotes and Orders CSVs.
 
 import json, base64, re, os, sys
 from datetime import datetime, timedelta
-from concurrent.futures import ThreadPoolExecutor
 import tkinter as tk
 from tkinter import filedialog
 import pandas as pd
 import requests
-import snowflake.connector
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 CONFIG_PATH = r"F:\Revenue Management\Team Individual Folders\TSchlotter\PODS-Product-Reporting\config.json"
@@ -109,16 +107,6 @@ def load_config():
     with open(CONFIG_PATH) as f:
         return json.load(f)
 
-def get_snowflake_conn(cfg):
-    return snowflake.connector.connect(
-        user=cfg["snowflake_user"],
-        account=cfg["snowflake_account"],
-        authenticator="externalbrowser",
-        warehouse="ELT_WH",
-        database="PROD_DW",
-        schema="DW_SEMANTIC",
-    )
-
 def gh_get(token, path):
     r = requests.get(
         f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}",
@@ -136,13 +124,13 @@ def gh_put(token, path, content_bytes, sha, message):
     r.raise_for_status()
     print(f"  ✓ Pushed {path}")
 
-def pick_file(title):
+def pick_file(title, filetypes=None):
     root = tk.Tk()
     root.attributes('-topmost', True)
     root.withdraw()
     path = filedialog.askopenfilename(
         parent=root, title=title,
-        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+        filetypes=filetypes or [("CSV files", "*.csv"), ("All files", "*.*")]
     )
     root.destroy()
     if not path:
@@ -256,56 +244,52 @@ def process_hah_csvs(quotes_path, orders_path):
     all_hah_names = set(q_by_agent.keys()) | set(o_by_agent.keys())
     return q_by_agent, o_by_agent, all_hah_names
 
-# ── Snowflake queries ──────────────────────────────────────────────────────────
-def q_cancel_rate(conn, end_date):
-    sql = f"""
-    WITH labor_quotes AS (
-        SELECT DISTINCT QUOTEIDENTITY
-        FROM PROD_DW.DW_BASE.LABOR_REFERRAL_FACT
-        WHERE VENDORREFERRALDATE >= '{LAUNCH_DATE}'
-          AND VENDORREFERRALDATE <= '{end_date}'
-    ),
-    base AS (
-        SELECT
-            f."Order Number"                                          AS order_num,
-            f."Date Order Booked"                                     AS order_date,
-            f."Gross Container Count"                                 AS container_qty,
-            COALESCE(f."Cancelled Container Count", 0)               AS cancelled_qty,
-            CASE WHEN l.QUOTEIDENTITY IS NOT NULL THEN 1 ELSE 0 END  AS has_labor,
-            DATEDIFF('day', f."Date Order Booked", CURRENT_DATE())   AS days_old
-        FROM PROD_DW.DW_SEMANTIC.ORDER_CONTAINER_SALES_FACT f
-        LEFT JOIN labor_quotes l ON f."Quote Number" = l.QUOTEIDENTITY
-        WHERE f."Date Order Booked" >= '{LAUNCH_DATE}'
-          AND f."Date Order Booked" <= '{end_date}'
-          AND f."Gross Container Count" > 0
+# ── Cancel rate from IL Reporting Excel ────────────────────────────────────────
+def read_cancel_rate_from_excel(excel_path):
+    """Read the 3 cancel rate values from the Management Summary sheet."""
+    xl = pd.ExcelFile(excel_path)
+    sheet_name = next(
+        (s for s in xl.sheet_names if "management" in s.lower() or "summary" in s.lower()),
+        xl.sheet_names[0]
     )
-    SELECT
-        has_labor,
-        SUM(CASE WHEN days_old >= 7  THEN cancelled_qty ELSE 0 END)
-          / NULLIF(SUM(CASE WHEN days_old >= 7  THEN container_qty ELSE 0 END), 0) * 100 AS cancel_7d,
-        SUM(CASE WHEN days_old >= 30 THEN cancelled_qty ELSE 0 END)
-          / NULLIF(SUM(CASE WHEN days_old >= 30 THEN container_qty ELSE 0 END), 0) * 100 AS cancel_30d,
-        SUM(container_qty) AS total_containers
-    FROM base
-    GROUP BY has_labor
-    """
-    cur = conn.cursor()
-    cur.execute(sql)
-    rows = {row[0]: {"cancel_7d": row[1] or 0, "cancel_30d": row[2] or 0, "containers": row[3] or 0}
-            for row in cur.fetchall()}
+    df = xl.parse(sheet_name, header=None)
 
-    with_labor    = rows.get(1, {"cancel_7d": 0, "cancel_30d": 0, "containers": 0})
-    without_labor = rows.get(0, {"cancel_7d": 0, "cancel_30d": 0, "containers": 0})
+    delta_7d = delta_30d = savings = None
+    for _, row in df.iterrows():
+        for ci, cell in enumerate(row):
+            if not isinstance(cell, str):
+                continue
+            cell_l = cell.lower()
+            if "7 day cancel rate" in cell_l or "7-day cancel rate" in cell_l:
+                val = _next_numeric(row, ci)
+                if val is not None:
+                    delta_7d = round(val * 100, 4)   # stored as decimal (e.g. -0.06307) → %-pts
+            elif "30 day cancel rate" in cell_l or "30-day cancel rate" in cell_l:
+                val = _next_numeric(row, ci)
+                if val is not None:
+                    delta_30d = round(val * 100, 4)
+            elif "cancel rate savings" in cell_l or "cancel savings" in cell_l:
+                val = _next_numeric(row, ci)
+                if val is not None:
+                    savings = round(val)
 
-    delta_7d  = round(with_labor["cancel_7d"]  - without_labor["cancel_7d"],  1)
-    delta_30d = round(with_labor["cancel_30d"] - without_labor["cancel_30d"], 1)
-    savings   = round(abs(delta_30d) / 100 * with_labor["containers"] * ECR * AVG_CTR_PER_ORDER)
+    if delta_7d is None or delta_30d is None or savings is None:
+        raise ValueError(
+            f"Could not find all 3 cancel rate values in '{sheet_name}' sheet. "
+            f"Found: delta_7d={delta_7d}, delta_30d={delta_30d}, savings={savings}. "
+            "Make sure Management Summary sheet has '7 Day Cancel Rate Impact', "
+            "'30 Day Cancel Rate Impact', and 'Cancel Rate Savings' labels."
+        )
 
-    return {
-        "delta_7d":  delta_7d,
-        "delta_30d": delta_30d,
-        "savings":   savings,
-    }
+    return {"delta_7d": delta_7d, "delta_30d": delta_30d, "savings": savings}
+
+
+def _next_numeric(row, start_idx):
+    """Return the first numeric value in the row after start_idx."""
+    for v in row.iloc[start_idx + 1:]:
+        if isinstance(v, (int, float)) and not pd.isna(v):
+            return v
+    return None
 
 # ── Load previous agent data from il_data.js ──────────────────────────────────
 def load_existing_agents():
@@ -584,7 +568,7 @@ def main():
     end_date = last_sunday()
     print(f"\nReport week ending: {end_date}\n")
 
-    # Pick CSVs
+    # Pick files
     print("Select the HaH Quotes CSV (cumulative since launch)...")
     quotes_path = pick_file("Select HaH Quotes CSV — cumulative since 5/1/26")
     print(f"  ✓ {os.path.basename(quotes_path)}")
@@ -593,27 +577,29 @@ def main():
     orders_path = pick_file("Select HaH Orders CSV — cumulative since 5/1/26")
     print(f"  ✓ {os.path.basename(orders_path)}")
 
+    print("Select the IL Reporting Excel (e.g. 'Integrated Labor Reporting 6.29.26.xlsx')...")
+    excel_path = pick_file(
+        "Select IL Reporting Excel",
+        filetypes=[("Excel files", "*.xlsx *.xlsm *.xls"), ("All files", "*.*")]
+    )
+    print(f"  ✓ {os.path.basename(excel_path)}")
+
     # Process HaH CSVs
     print("\n[1/4] Processing HaH CSVs...")
     q_by_agent, o_by_agent, all_hah_names = process_hah_csvs(quotes_path, orders_path)
     print(f"  {len(all_hah_names)} unique agents across quotes + orders")
 
-    # Snowflake
-    print("\n[2/4] Connecting to Snowflake (browser SSO will open)...")
-    conn = get_snowflake_conn(cfg)
-    print("  Connected.")
-
-    print("  Running cancel rate query...")
+    # Cancel rate from Excel
+    print("\n[2/4] Reading cancel rate from IL Reporting Excel...")
     try:
-        cancel_data = q_cancel_rate(conn, end_date)
+        cancel_data = read_cancel_rate_from_excel(excel_path)
         print(f"  7d delta: {cancel_data['delta_7d']}pp | 30d delta: {cancel_data['delta_30d']}pp | savings: ${cancel_data['savings']:,}")
     except Exception as e:
         import traceback
-        print(f"  WARNING: Cancel rate query failed:")
+        print(f"  WARNING: Could not read cancel rate from Excel:")
         traceback.print_exc()
         print("  Keeping existing cancel rate values from il_data.js")
         cancel_data = load_existing_cancel_data()
-    conn.close()
 
     # Build agent data
     print("\n[3/4] Building agent data...")
