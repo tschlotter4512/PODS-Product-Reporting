@@ -10,8 +10,8 @@ const IL_DATA = {
   conv_rate:     25.1,
 
   // Cancel rate impact
-  cancel_delta_7d:  -6.0149,
-  cancel_delta_30d: -5.9418,
+  cancel_delta_7d:  -6.0,
+  cancel_delta_30d: -5.9,
   cancel_savings:   38297,
   annualized_savings:        459564,
   projected_rollout_savings: "~$2,407,240",
