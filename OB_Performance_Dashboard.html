@@ -301,7 +301,7 @@ function setupTooltip(canvasId){
 }
 function buildContainersTrend(){
   const el=document.getElementById('containers-chart');if(!el)return;
-  const bars=ALL_WKS.map(w=>{
+  const bars=AGENT_WKS.map(w=>{
     const total=D[w].agents.reduce((s,a)=>s+(a.containers||0),0);
     return{label:'W'+D[w].num+'\n'+D[w].date,total,active:w===AW};
   });
@@ -340,8 +340,7 @@ document.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>{
 });
 window.addEventListener('resize',()=>{if(document.getElementById('summary-page').classList.contains('active'))bsc();});
 
-// Summary uses all weeks; By Agent uses only last 5
-wbs('sum-week-selector', ALL_WKS, ()=>buildSummary());
+wbs('sum-week-selector', AGENT_WKS, ()=>buildSummary());
 wbs('week-selector', AGENT_WKS, ()=>bat());
 rwb();buildSummary();
 </script>
