@@ -53,12 +53,12 @@ AGENTS = [
     ('Gimarie Barastas',             'CNX', '005Hu00000Q2TuFIAV', 'GBarastas',    'Gimarie Barastas'),
     ('Jerico Galve',                 'CNX', '005Hu00000SZTxPIAX', 'JGalve',       'Jerico Galve'),
     ('Cristal Apple Barredo',        'CNX', '0053m00000DCQDkAAP', 'CABarredo',    'Cristal Apple Barredo'),
-    ('Jessa Rey Belotindos',         'CNX', '005Hu00000Q3q8hIAB', 'JRBelotindos', 'Jessa Rey Belontindos'),
+    ('Jessa Rey Belotindos',         'CNX', '005Hu00000Q3q8hIAB', 'JRBelotindos', 'Jessa Rey Belotindos'),
     ('Lienard Bryan Organo',         'CNX', '005Hu00000SZk9GIAT', 'LBOrgano',     'Lienard Bryan Organo'),
     ('Sendy Firmalino',              'CNX', '0053m00000DLYO4AAP', 'SFirmalino',   'Sendy Firmalino'),
     ('Ednalyn Mirandilla',           'CNX', '0053m00000DLY0nAAH', 'EMirandilla',  'Ednalyn Mirandilla'),
     ('Hannay Lozano',                'CNX', '0053m00000DCQDjAAP', 'HLozano',      'Hannay Lozano'),
-    ('Ferdinand Carlo Caete',        'CNX', '005Hu00000PmyDtIAJ', 'FCCaete',      'Ferdinand Carlo Canete'),
+    ('Ferdinand Carlo Caete',        'CNX', '005Hu00000PmyDtIAJ', 'FCCaete',      'Ferdinand Carlo Caete'),
     ('Eumarbel Dionglay',            'CNX', '005Hu00000Q3q8NIAR', 'EDionglay',    'Eumarbel Dionglay'),
     ('Milkos Malcolm Orven Miguel',  'CNX', '0053m00000DLY28AAH', 'MOMiguel',     'Milkos Malcolm Orven Miguel'),
     ('Jan Malvin Molina',            'CNX', '005Hu00000Q2Tu0IAF', 'JMMolina',     'Jan Malvin Molina'),
@@ -76,7 +76,7 @@ AGENTS = [
     ('Irish Verona',                 'CNX', '005Hu00000SZk94IAD', 'IVerona',      'Irish Verona'),
     ('Jerome Roger Rosites',         'CNX', '005Hu00000SZk8nIAD', 'JRRosites',    'Jerome Roger Rosites'),
     ('Ivan Marc Lanestosa',          'CNX', '005Hu00000SZloMIAT', 'IMLanestosa',  'Ivan Marc Lanestosa'),
-    ('Christian jerick Sanchez',     'CNX', '005Hu00000SXJajIAH', 'CjSanchez',    'Christian jerick Sanchez'),
+    ('Christian Jerick Sanchez',     'CNX', '005Hu00000SXJajIAH', 'CjSanchez',    'Christian Jerick Sanchez'),
     ('John Rick Elumba',             'CNX', '005Hu00000SZlaqIAD', 'JRElumba',     'John Rick Elumba'),
 ]
 
