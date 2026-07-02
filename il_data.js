@@ -5,28 +5,28 @@ const IL_DATA = {
   updated_date: "June 28, 2026",
 
   // Program totals (cumulative since launch May 1, 2026)
-  total_quotes:  622,
-  total_orders:  156,
-  conv_rate:     25.1,
+  total_quotes:  670,
+  total_orders:  177,
+  conv_rate:     26.4,
 
   // Cancel rate impact
   cancel_delta_7d:  -6.0,
   cancel_delta_30d: -5.9,
-  cancel_savings:   38297,
-  annualized_savings:        459564,
-  projected_rollout_savings: "~$2,407,240",
+  cancel_savings:   38028,
+  annualized_savings:        239498,
+  projected_rollout_savings: "~$1,225,337",
   projected_rollout_agents:  220,
 
   labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
 
   // Adoption
-  active_agents: 42,
-  total_agents:  78,
+  active_agents: 43,
+  total_agents:  79,
 
   // Prior week values (for trajectory narrative)
   prev_orders:  156,
   prev_quotes:  622,
-  prev_savings: 55007,
+  prev_savings: 38297,
 
   // Department breakdown
   depts: {
@@ -79,43 +79,43 @@ const IL_DATA = {
   weekly_trends: [
   {
     "week": "5/4-5/10",
-    "quotes": 31,
-    "orders": 11
+    "quotes": 33,
+    "orders": 12
   },
   {
     "week": "5/11-5/17",
-    "quotes": 86,
-    "orders": 20
+    "quotes": 94,
+    "orders": 21
   },
   {
     "week": "5/18-5/24",
-    "quotes": 76,
-    "orders": 16
+    "quotes": 78,
+    "orders": 18
   },
   {
     "week": "5/25-5/31",
-    "quotes": 72,
+    "quotes": 73,
     "orders": 14
   },
   {
     "week": "6/1-6/7",
-    "quotes": 85,
-    "orders": 30
+    "quotes": 95,
+    "orders": 34
   },
   {
     "week": "6/8-6/14",
-    "quotes": 100,
+    "quotes": 104,
     "orders": 25
   },
   {
     "week": "6/15-6/21",
-    "quotes": 86,
-    "orders": 19
+    "quotes": 95,
+    "orders": 26
   },
   {
     "week": "6/22-6/28",
-    "quotes": 75,
-    "orders": 20
+    "quotes": 85,
+    "orders": 25
   }
 ],
 
@@ -149,6 +149,13 @@ const IL_DATA = {
 
   // Agent roster (cumulative since launch)
   agents: [
+  {
+    "name": "HaH Agent",
+    "dept": "HaH",
+    "loc": "\u2014",
+    "quoted": 48,
+    "booked": 21
+  },
   {
     "name": "Catherine Saitta",
     "dept": "Sales",
