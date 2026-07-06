@@ -158,7 +158,7 @@ td.r { text-align: right; } tr:last-child td { border-bottom: none; } tr:hover t
       <div class="kpi-sub">Quotes / Orders sold</div>
     </div>
     <div class="kpi-card green">
-      <div class="kpi-label">30-Day Cancel Impact</div>
+      <div class="kpi-label" id="kpi-cancel-label">30-Day Cancel Impact</div>
       <div class="kpi-value positive" id="kpi-cancel30"></div>
       <div class="kpi-sub">vs. same-agent baseline</div>
     </div>
@@ -348,7 +348,10 @@ document.getElementById('hdr-updated').textContent = 'Updated ' + IL_DATA.update
 document.getElementById('kpi-orders').textContent  = IL_DATA.total_orders.toLocaleString();
 document.getElementById('kpi-quotes').textContent  = IL_DATA.total_quotes.toLocaleString();
 document.getElementById('kpi-conv').textContent    = IL_DATA.conv_rate.toFixed(1) + '%';
-document.getElementById('kpi-cancel30').textContent = (IL_DATA.cancel_delta_30d < 0 ? '−' : '+') + Math.abs(IL_DATA.cancel_delta_30d).toFixed(1) + 'pp';
+const primaryPeriod = IL_DATA.cancel_delta_primary_period || 30;
+const primaryDelta  = primaryPeriod === 7 ? IL_DATA.cancel_delta_7d : IL_DATA.cancel_delta_30d;
+document.getElementById('kpi-cancel-label').textContent = primaryPeriod + '-Day Cancel Impact';
+document.getElementById('kpi-cancel30').textContent = (primaryDelta < 0 ? '−' : '+') + Math.abs(primaryDelta).toFixed(1) + 'pp';
 document.getElementById('kpi-active').innerHTML    = IL_DATA.active_agents + '<span style="font-size:18px;color:#6b7a99"> / ' + IL_DATA.total_agents + '</span>';
 const adoptionPct = (IL_DATA.active_agents / IL_DATA.total_agents * 100).toFixed(1);
 document.getElementById('kpi-adoption-pct').textContent = adoptionPct + '% adoption rate';
@@ -364,13 +367,13 @@ document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.t
   const wowText = savingsWoW > 0
     ? `Up from $${IL_DATA.prev_savings.toLocaleString()} last week — savings continue to accelerate as more agents activate.`
     : `$${IL_DATA.prev_savings.toLocaleString()} last week.`;
-  const cancelAbs = Math.abs(IL_DATA.cancel_delta_30d);
+  const cancelAbs = Math.abs(primaryDelta);
 
   document.getElementById('financial-cards').innerHTML = `
     <div class="win-card">
       <div style="font-size:24px;margin-bottom:8px;">💰</div>
       <div class="win-title">$${IL_DATA.cancel_savings.toLocaleString()} in Cancel Rate Savings</div>
-      <div class="win-body">An <strong>${cancelAbs} percentage point</strong> reduction in 30-day cancel rate on orders with labor booked, measured against the same agent's orders without labor. ${wowText}</div>
+      <div class="win-body">An <strong>${cancelAbs} percentage point</strong> reduction in ${primaryPeriod}-day cancel rate on orders with labor booked, measured against the same agent's orders without labor. ${wowText}</div>
     </div>
     <div class="proj-card">
       <div class="proj-label">Annualized — Current Pilot (${IL_DATA.active_agents} active agents)</div>

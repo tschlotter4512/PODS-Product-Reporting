@@ -322,31 +322,74 @@ def read_cancel_rate_from_tableau_csv(csv_path, o_by_roster):
 
     roster_names = list(DEPT_MAP.keys())
     w7 = w30 = total_weight = 0.0
+    missing_data_weight = 0.0
+    used, no_orders, missing_data, not_found = [], [], [], []
 
+    matched_names = set()
     for _, row in df.iterrows():
         agent_name = str(row[name_col]).strip()
         matched = fuzzy_match(agent_name, roster_names)
         if not matched:
+            continue
+        matched_names.add(matched)
+        weight = o_by_roster.get(matched, 0)
+        if weight == 0:
+            no_orders.append(matched)  # no labor orders to measure a delta against — exclude, don't fake a weight
             continue
         l7  = pct(row[l7_col])
         r7  = pct(row[r7_col])
         l30 = pct(row[l30_col])
         r30 = pct(row[r30_col])
         if l7 is None or r7 is None or l30 is None or r30 is None:
+            missing_data.append(matched)  # usually a missing PODS CID in the PO# field — Tableau can't link the order
+            missing_data_weight += weight
             continue
-        weight = o_by_roster.get(matched, 0) or 1  # fall back to 1 so agent isn't dropped
+        used.append(matched)
         w7           += (l7  - r7)  * weight
         w30          += (l30 - r30) * weight
         total_weight += weight
 
+    not_found = [r for r in roster_names if r not in matched_names and o_by_roster.get(r, 0) > 0]
+
+    print(f"  Cancel rate calc: {len(used)} of {len(roster_names)} roster agents have usable Tableau data")
+    if missing_data:
+        print(f"    {len(missing_data)} imputed with group-avg delta - matched but missing labor cancel-rate data (likely no PODS CID in PO# field):")
+        for a in sorted(missing_data):
+            print(f"      - {a}")
+    if not_found:
+        print(f"    {len(not_found)} excluded - have booked labor orders but no row in the Tableau CSV at all:")
+        for a in sorted(not_found):
+            print(f"      - {a}")
+    if no_orders:
+        print(f"    {len(no_orders)} excluded - no booked labor orders yet (name matched, 0 weight)")
+
     if total_weight == 0:
         raise ValueError("No IL agents with labor cancel data found in the CSV.")
 
+    # Agents with booked labor orders but no usable Tableau cancel data (usually a
+    # missing PODS CID in the PO# field) get the group-weighted-average delta
+    # imputed, so their order volume still counts toward total savings instead of
+    # being silently dropped. This doesn't change delta_7d/delta_30d (imputing the
+    # mean leaves the weighted mean unchanged) but grows total_weight, which the
+    # savings dollar figure scales on.
+    if missing_data_weight > 0:
+        avg_delta_7  = w7  / total_weight
+        avg_delta_30 = w30 / total_weight
+        w7           += avg_delta_7  * missing_data_weight
+        w30          += avg_delta_30 * missing_data_weight
+        total_weight += missing_data_weight
+
     delta_7d  = round(w7  / total_weight * 100, 1)
     delta_30d = round(w30 / total_weight * 100, 1)
-    savings   = round(abs(delta_30d) / 100 * total_weight * AVG_CTR_PER_ORDER * ECR)
 
-    return {"delta_7d": delta_7d, "delta_30d": delta_30d, "savings": savings}
+    # Savings are driven by whichever window (7d or 30d) shows the larger-magnitude
+    # delta, since that reflects the greater current financial impact.
+    primary_period = 7 if abs(delta_7d) >= abs(delta_30d) else 30
+    primary_delta  = delta_7d if primary_period == 7 else delta_30d
+    savings        = round(abs(primary_delta) / 100 * total_weight * AVG_CTR_PER_ORDER * ECR)
+    print(f"  Savings driven by {primary_period}-day delta ({primary_delta}pp) — larger magnitude than the other window")
+
+    return {"delta_7d": delta_7d, "delta_30d": delta_30d, "savings": savings, "primary_period": primary_period}
 
 # ── Load previous agent data from il_data.js ──────────────────────────────────
 def load_existing_agents():
@@ -365,26 +408,27 @@ def load_existing_agents():
     return {}
 
 # ── Build agent list ───────────────────────────────────────────────────────────
+HAH_AGENT_NAME = "HaH Agent"
+
 def build_agents(q_by_hah, o_by_hah, all_hah_names, prev_agents):
     roster_names = list(DEPT_MAP.keys())
-    skipped = []
+    unmatched = []
 
-    # Map HaH name → roster canonical name; skip non-roster names (HaH agents)
+    # Map HaH name → roster canonical name; non-roster names roll up under HAH_AGENT_NAME
     hah_to_roster = {}
     for name in all_hah_names:
         matched = fuzzy_match(name, roster_names)
-        if matched:
-            hah_to_roster[name] = matched
-        else:
-            skipped.append(name)
+        hah_to_roster[name] = matched if matched else HAH_AGENT_NAME
+        if not matched:
+            unmatched.append(name)
 
-    if skipped:
-        print(f"  Skipped {len(skipped)} unrecognized names (HaH agents or new trainees):")
-        for s in sorted(skipped):
+    if unmatched:
+        print(f"  Rolled up {len(unmatched)} unrecognized names into '{HAH_AGENT_NAME}':")
+        for s in sorted(unmatched):
             print(f"    - {s}")
-        print("  To add a new PODS agent, add them to DEPT_MAP in the script.")
+        print("  To add a new PODS agent to the roster instead, add them to DEPT_MAP in the script.")
 
-    # Accumulate quotes/orders to roster canonical names
+    # Accumulate quotes/orders to roster canonical names (+ HaH Agent rollup)
     q_totals, o_totals = {}, {}
     for hah_name, roster_name in hah_to_roster.items():
         q_totals[roster_name] = q_totals.get(roster_name, 0) + q_by_hah.get(hah_name, 0)
@@ -397,6 +441,13 @@ def build_agents(q_by_hah, o_by_hah, all_hah_names, prev_agents):
         quoted = max(q_totals.get(name, 0), prev.get("quoted", 0))
         booked = max(o_totals.get(name, 0), prev.get("booked", 0))
         agents.append({"name": name, "dept": dept, "loc": loc, "quoted": quoted, "booked": booked})
+
+    # HaH Agent rollup row — quotes/orders from HaH agents not on the PODS roster
+    prev_hah = prev_agents.get(HAH_AGENT_NAME, {})
+    hah_quoted = max(q_totals.get(HAH_AGENT_NAME, 0), prev_hah.get("quoted", 0))
+    hah_booked = max(o_totals.get(HAH_AGENT_NAME, 0), prev_hah.get("booked", 0))
+    if hah_quoted or hah_booked:
+        agents.append({"name": HAH_AGENT_NAME, "dept": "HaH", "loc": "—", "quoted": hah_quoted, "booked": hah_booked})
 
     agents.sort(key=lambda a: (-a["booked"], -a["quoted"], a["name"]))
     return agents
@@ -474,10 +525,15 @@ def load_existing_cancel_data():
     def extract_int(key):
         m = re.search(rf"{key}:\s*([\d]+)", content)
         return int(m.group(1)) if m else 0
+    delta_7d  = extract_float("cancel_delta_7d")
+    delta_30d = extract_float("cancel_delta_30d")
+    m = re.search(r"cancel_delta_primary_period:\s*(\d+)", content)
+    primary_period = int(m.group(1)) if m else (7 if abs(delta_7d) >= abs(delta_30d) else 30)
     return {
-        "delta_7d":  extract_float("cancel_delta_7d"),
-        "delta_30d": extract_float("cancel_delta_30d"),
-        "savings":   extract_int("cancel_savings"),
+        "delta_7d":       delta_7d,
+        "delta_30d":      delta_30d,
+        "savings":        extract_int("cancel_savings"),
+        "primary_period": primary_period,
     }
 
 def load_prev_totals():
@@ -548,16 +604,20 @@ def build_il_data_js(end_date, agents, dept_stats, cancel_data, weekly_trends,
     total_agents  = len(agents)
     active_agents = sum(1 for a in agents if a["quoted"] > 0)
 
-    savings       = cancel_data["savings"]
-    delta_7d      = cancel_data["delta_7d"]
-    delta_30d     = cancel_data["delta_30d"]
+    savings        = cancel_data["savings"]
+    delta_7d       = cancel_data["delta_7d"]
+    delta_30d      = cancel_data["delta_30d"]
+    primary_period = cancel_data["primary_period"]
 
-    # Annualized = current monthly run rate × 12
-    monthly_savings = savings / max(1, active_agents)
-    annualized      = round(monthly_savings * 12 * active_agents)
-    proj_per_agent  = savings / active_agents if active_agents else 0
-    projected_total = round(proj_per_agent * 220 * 12)
-    projected_str   = f"~${projected_total:,}"
+    # Annualized = actual monthly run rate (cumulative savings / months since launch) × 12
+    launch_dt         = datetime.strptime(LAUNCH_DATE, "%Y-%m-%d")
+    end_dt             = datetime.strptime(end_date, "%Y-%m-%d")
+    months_elapsed     = max((end_dt - launch_dt).days / 30.44, 1 / 30.44)
+    monthly_savings    = savings / months_elapsed
+    annualized         = round(monthly_savings * 12)
+    monthly_per_agent  = monthly_savings / active_agents if active_agents else 0
+    projected_total    = round(monthly_per_agent * 220 * 12)
+    projected_str      = f"~${projected_total:,}"
 
     # Silent grid from agents
     silent_grid = []
@@ -601,6 +661,7 @@ const IL_DATA = {{
   // Cancel rate impact
   cancel_delta_7d:  {delta_7d},
   cancel_delta_30d: {delta_30d},
+  cancel_delta_primary_period: {primary_period},   // whichever window (7 or 30) has the larger-magnitude delta — drives savings
   cancel_savings:   {savings},
   annualized_savings:        {annualized},
   projected_rollout_savings: "{projected_str}",
@@ -722,7 +783,7 @@ def main():
     hah_to_roster_map = {}
     for n in all_names_raw:
         m = fuzzy_match(n, roster_names)
-        if m: hah_to_roster_map[n] = m
+        hah_to_roster_map[n] = m if m else HAH_AGENT_NAME
     weekly_trends = build_weekly_trends(quotes_df_raw, orders_df_raw, hah_to_roster_map, end_date, existing_trends)
     print(f"  Weekly trends: {len(weekly_trends)} weeks")
     for w in weekly_trends:
