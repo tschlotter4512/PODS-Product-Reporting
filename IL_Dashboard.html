@@ -74,6 +74,7 @@ td.r { text-align: right; } tr:last-child td { border-bottom: none; } tr:hover t
 .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
 .b-sales { background: #e8edf5; color: var(--navy); } .b-sst { background: #ddeeff; color: var(--blue); }
 .b-ob { background: #fef3c7; color: #92400e; } .b-svc { background: #f3e8ff; color: #6b21a8; }
+.b-hah { background: #ffe4e6; color: #9f1239; }
 .rank { font-size: 11px; color: var(--gray-text); font-weight: 600; }
 
 .silent-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -105,6 +106,14 @@ td.r { text-align: right; } tr:last-child td { border-bottom: none; } tr:hover t
   border: 5px solid transparent; border-top-color: var(--navy);
 }
 .chart-col:hover .chart-tip { display: block; }
+
+.win-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); border-top: 3px solid var(--green); }
+.win-title { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 8px; }
+.win-body { font-size: 12px; color: var(--gray-text); line-height: 1.7; }
+.proj-card { background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); border-top: 3px solid var(--blue); text-align: center; }
+.proj-val { font-family: 'Barlow Condensed', sans-serif; font-size: 32px; font-weight: 800; color: var(--green); }
+.proj-label { font-size: 12px; color: var(--gray-text); margin-top: 4px; }
+.proj-sub { font-size: 11px; color: var(--gray-text); margin-top: 6px; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -206,6 +215,9 @@ td.r { text-align: right; } tr:last-child td { border-bottom: none; } tr:hover t
     </div>
   </div>
 
+  <div class="section-title">Financial Performance</div>
+  <div class="three-col" id="financial-cards"></div>
+
 </div>
 
 <!-- ══════════════════════ DEPARTMENTS ══════════════════════ -->
@@ -289,6 +301,7 @@ td.r { text-align: right; } tr:last-child td { border-bottom: none; } tr:hover t
     <option value="SST">SST</option>
     <option value="OB">OB</option>
     <option value="Service">Service</option>
+    <option value="HaH">HaH</option>
   </select>
   <label>Location</label>
   <select class="agent-filter-select" id="filter-loc" onchange="applyAgentFilters()">
@@ -344,6 +357,32 @@ document.getElementById('kpi-adoption-pct').textContent = adoptionPct + '% adopt
 document.getElementById('cancel-7d').textContent   = (IL_DATA.cancel_delta_7d < 0 ? '−' : '+') + Math.abs(IL_DATA.cancel_delta_7d).toFixed(1) + 'pp';
 document.getElementById('cancel-30d').textContent  = (IL_DATA.cancel_delta_30d < 0 ? '−' : '+') + Math.abs(IL_DATA.cancel_delta_30d).toFixed(1) + 'pp';
 document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.toFixed(1) + '%';
+
+// ── Financial cards ──────────────────────────────────────────────────────────
+(function() {
+  const savingsWoW = IL_DATA.cancel_savings - IL_DATA.prev_savings;
+  const wowText = savingsWoW > 0
+    ? `Up from $${IL_DATA.prev_savings.toLocaleString()} last week — savings continue to accelerate as more agents activate.`
+    : `$${IL_DATA.prev_savings.toLocaleString()} last week.`;
+  const cancelAbs = Math.abs(IL_DATA.cancel_delta_30d);
+
+  document.getElementById('financial-cards').innerHTML = `
+    <div class="win-card">
+      <div style="font-size:24px;margin-bottom:8px;">💰</div>
+      <div class="win-title">$${IL_DATA.cancel_savings.toLocaleString()} in Cancel Rate Savings</div>
+      <div class="win-body">An <strong>${cancelAbs} percentage point</strong> reduction in 30-day cancel rate on orders with labor booked, measured against the same agent's orders without labor. ${wowText}</div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-label">Annualized — Current Pilot (${IL_DATA.active_agents} active agents)</div>
+      <div class="proj-val">$${IL_DATA.annualized_savings.toLocaleString()}</div>
+      <div class="proj-sub">Monthly savings × 12 at current run rate</div>
+    </div>
+    <div class="proj-card">
+      <div class="proj-label">Projected Full Rollout (~${IL_DATA.projected_rollout_agents} agents)</div>
+      <div class="proj-val">${IL_DATA.projected_rollout_savings}</div>
+      <div class="proj-sub">Avg savings/active agent × ${IL_DATA.projected_rollout_agents} × 12</div>
+    </div>`;
+})();
 
 // ── Adoption bars ────────────────────────────────────────────────────────────
 (function() {
@@ -545,7 +584,7 @@ function renderAgentTable() {
 
   let rank = 1, html = '';
   sorted.forEach((a, i) => {
-    const deptBadge = { Sales:'b-sales', SST:'b-sst', OB:'b-ob', Service:'b-svc' }[a.dept] || 'b-sales';
+    const deptBadge = { Sales:'b-sales', SST:'b-sst', OB:'b-ob', Service:'b-svc', HaH:'b-hah' }[a.dept] || 'b-sales';
     const convStr = a.conv !== null ? a.conv.toFixed(1) + '%' : '—';
     let convStyle = '';
     if (a.conv !== null) {
