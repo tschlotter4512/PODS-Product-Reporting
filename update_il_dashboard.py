@@ -596,8 +596,76 @@ def build_weekly_trends(quotes_df, orders_df, hah_to_roster, end_date, existing_
     return weekly_trends
 
 
+def build_wow_data(quotes_df, orders_df, hah_to_roster, end_date):
+    """Compute this-week-vs-last-week quotes/orders per agent and per dept.
+
+    Uses the same date-filter + roster-mapping approach as build_weekly_trends,
+    just windowed to exactly two 7-day periods instead of grouped by week.
+    """
+    import pandas as pd
+
+    end_dt   = pd.Timestamp(end_date + " 23:59:59")
+    cur_start  = end_dt - timedelta(days=6, hours=23, minutes=59, seconds=59)
+    prev_end   = end_dt - timedelta(days=7)
+    prev_start = prev_end - timedelta(days=6, hours=23, minutes=59, seconds=59)
+
+    qdf = quotes_df[quotes_df["CSR_Name"].isin(hah_to_roster)].copy()
+    odf = orders_df[orders_df["CSR_Name"].isin(hah_to_roster) & ~orders_df["OrderStatus"].str.lower().str.contains("cancel", na=False)].copy()
+
+    date_cols_q = [c for c in qdf.columns if "date" in c.lower() and "creat" in c.lower()]
+    date_cols_o = [c for c in odf.columns if "date" in c.lower() and "book" in c.lower()]
+    if not date_cols_q or not date_cols_o:
+        return {}, []
+
+    qdf["_dt"] = pd.to_datetime(qdf[date_cols_q[0]], format="mixed")
+    odf["_dt"] = pd.to_datetime(odf[date_cols_o[0]], format="mixed")
+
+    qdf["_roster"] = qdf["CSR_Name"].map(hah_to_roster)
+    odf["_roster"] = odf["CSR_Name"].map(hah_to_roster)
+
+    q_id_col = next((c for c in qdf.columns if "quote" in c.lower() and "id" in c.lower()), None)
+    o_id_col = next((c for c in odf.columns if "order" in c.lower() and "#" in c.lower()), None)
+
+    def counts_in_window(df, id_col, start, end):
+        sub = df[(df["_dt"] >= start) & (df["_dt"] <= end)]
+        if id_col:
+            return sub.groupby("_roster")[id_col].nunique().to_dict()
+        return sub.groupby("_roster").size().to_dict()
+
+    q_cur  = counts_in_window(qdf, q_id_col, cur_start, end_dt)
+    q_prev = counts_in_window(qdf, q_id_col, prev_start, prev_end)
+    o_cur  = counts_in_window(odf, o_id_col, cur_start, end_dt)
+    o_prev = counts_in_window(odf, o_id_col, prev_start, prev_end)
+
+    agent_names = list(DEPT_MAP.keys()) + [HAH_AGENT_NAME]
+    agent_wow = []
+    for name in agent_names:
+        dept, loc = DEPT_MAP.get(name, ("HaH", "—"))
+        row = {
+            "name": name, "dept": dept, "loc": loc,
+            "quotes_cur":  int(q_cur.get(name, 0)),
+            "quotes_prev": int(q_prev.get(name, 0)),
+            "orders_cur":  int(o_cur.get(name, 0)),
+            "orders_prev": int(o_prev.get(name, 0)),
+        }
+        if row["quotes_cur"] or row["quotes_prev"] or row["orders_cur"] or row["orders_prev"]:
+            agent_wow.append(row)
+
+    dept_wow = {}
+    for dept in ("Sales", "SST", "OB"):
+        grp = [a for a in agent_wow if a["dept"] == dept]
+        dept_wow[dept] = {
+            "quotes_cur":  sum(a["quotes_cur"]  for a in grp),
+            "quotes_prev": sum(a["quotes_prev"] for a in grp),
+            "orders_cur":  sum(a["orders_cur"]  for a in grp),
+            "orders_prev": sum(a["orders_prev"] for a in grp),
+        }
+
+    return dept_wow, agent_wow
+
+
 def build_il_data_js(end_date, agents, dept_stats, cancel_data, weekly_trends,
-                     prev_orders, prev_quotes, prev_savings):
+                     prev_orders, prev_quotes, prev_savings, dept_wow, agent_wow):
     total_quotes  = sum(a["quoted"] for a in agents)
     total_orders  = sum(a["booked"] for a in agents)
     conv_rate     = round(total_orders / total_quotes * 100, 1) if total_quotes else 0
@@ -690,6 +758,12 @@ const IL_DATA = {{
 
   // Weekly new quotes & orders (last 8 weeks) — for stacked bar chart
   weekly_trends: {json.dumps(weekly_trends, indent=2)},
+
+  // This week vs last week, by department
+  dept_wow: {json.dumps(dept_wow, indent=2)},
+
+  // This week vs last week, by agent (only agents with activity in either week)
+  agent_wow: {json.dumps(agent_wow, indent=2)},
 
   // Opportunity table
   opp_table: {json.dumps(opp_table, indent=2)},
@@ -789,11 +863,18 @@ def main():
     for w in weekly_trends:
         print(f"    {w['week']}: {w['quotes']} quotes, {w['orders']} orders")
 
+    # Week-over-week breakdown (dept + agent level)
+    dept_wow, agent_wow = build_wow_data(quotes_df_raw, orders_df_raw, hah_to_roster_map, end_date)
+    print(f"  WoW (this week vs last week):")
+    for dept, dw in dept_wow.items():
+        print(f"    {dept}: quotes {dw['quotes_prev']} -> {dw['quotes_cur']} | orders {dw['orders_prev']} -> {dw['orders_cur']}")
+
     # Generate content
     print("\n[5/5] Writing and pushing...")
     il_data_content = build_il_data_js(
         end_date, agents, dept_stats, cancel_data,
-        weekly_trends, prev_orders, prev_quotes, prev_savings
+        weekly_trends, prev_orders, prev_quotes, prev_savings,
+        dept_wow, agent_wow
     )
 
     # Write il_data.js locally

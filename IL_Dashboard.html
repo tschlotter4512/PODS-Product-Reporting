@@ -241,6 +241,18 @@ td.r { text-align: right; } tr:last-child td { border-bottom: none; } tr:hover t
   <div class="section-title">Department Scorecards — Cumulative Since Launch</div>
   <div class="dept-cards" id="dept-cards" style="margin-bottom:20px;"></div>
 
+  <div class="section-title">This Week vs Last Week</div>
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Department WoW</div>
+      <div style="display:flex;flex-direction:column;gap:14px;" id="dept-wow"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Top Movers</div>
+      <div id="top-movers"></div>
+    </div>
+  </div>
+
   <div class="section-title">Silent Agent Breakdown by Location</div>
   <div class="two-col">
     <div class="card">
@@ -418,6 +430,64 @@ document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.t
   document.getElementById('adoption-bars').innerHTML = html;
 })();
 
+// ── Department WoW ───────────────────────────────────────────────────────────
+(function() {
+  const depts = [
+    { key: 'Sales', cls: 'sales' },
+    { key: 'SST',   cls: 'sst'   },
+    { key: 'OB',    cls: 'ob'    },
+  ];
+  function deltaSpan(cur, prev) {
+    const d = cur - prev;
+    const color = d > 0 ? 'var(--green)' : d < 0 ? 'var(--red)' : 'var(--gray-text)';
+    const sign  = d > 0 ? '+' : '';
+    return `<span style="color:${color};font-weight:700;">${sign}${d}</span>`;
+  }
+  let html = '';
+  const dw = IL_DATA.dept_wow || {};
+  depts.forEach(d => {
+    const ds = dw[d.key];
+    if (!ds) return;
+    html += `<div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;">
+        <strong>${d.key}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gray-text);">
+        <span>Quotes: ${ds.quotes_prev} &rarr; ${ds.quotes_cur} (${deltaSpan(ds.quotes_cur, ds.quotes_prev)})</span>
+        <span>Orders: ${ds.orders_prev} &rarr; ${ds.orders_cur} (${deltaSpan(ds.orders_cur, ds.orders_prev)})</span>
+      </div>
+    </div>`;
+  });
+  document.getElementById('dept-wow').innerHTML = html || '<div style="font-size:12px;color:var(--gray-text);">No WoW data available.</div>';
+})();
+
+// ── Top Movers ────────────────────────────────────────────────────────────────
+(function() {
+  const agentWow = IL_DATA.agent_wow || [];
+  const deptBadge = { Sales:'b-sales', SST:'b-sst', OB:'b-ob', Service:'b-svc', HaH:'b-hah' };
+
+  function moverRow(a, curKey, prevKey) {
+    const delta = a[curKey] - a[prevKey];
+    const sign  = delta > 0 ? '+' : '';
+    const color = delta > 0 ? 'var(--green)' : delta < 0 ? 'var(--red)' : 'var(--gray-text)';
+    const badge = deptBadge[a.dept] || 'b-hah';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12px;border-bottom:1px solid var(--gray-border);">
+      <span><span class="badge ${badge}" style="margin-right:6px;">${a.dept}</span>${a.name}</span>
+      <span style="color:var(--gray-text);">${a[prevKey]} &rarr; ${a[curKey]} <strong style="color:${color};">(${sign}${delta})</strong></span>
+    </div>`;
+  }
+
+  const topQuotes = [...agentWow].sort((a, b) => (b.quotes_cur - b.quotes_prev) - (a.quotes_cur - a.quotes_prev)).slice(0, 5);
+  const topOrders = [...agentWow].sort((a, b) => (b.orders_cur - b.orders_prev) - (a.orders_cur - a.orders_prev)).slice(0, 5);
+
+  let html = '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-text);margin-bottom:4px;">Top Quote Gainers</div>';
+  topQuotes.forEach(a => { html += moverRow(a, 'quotes_cur', 'quotes_prev'); });
+  html += '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-text);margin:12px 0 4px 0;">Top Order Gainers</div>';
+  topOrders.forEach(a => { html += moverRow(a, 'orders_cur', 'orders_prev'); });
+
+  document.getElementById('top-movers').innerHTML = html;
+})();
+
 // ── Weekly trend chart ───────────────────────────────────────────────────────
 (function() {
   const trends = IL_DATA.weekly_trends;
@@ -451,9 +521,9 @@ document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.t
 // ── Department cards ─────────────────────────────────────────────────────────
 (function() {
   const DEPT_CONFIG = [
-    { key: 'Sales', cls: 'sales', meta: 'CLW + CNX · Outbound leads' },
-    { key: 'SST',   cls: 'sst',   meta: 'CLW + CNX · Complex/high-value moves' },
-    { key: 'OB',    cls: 'ob',    meta: 'CLW + CNX · Inbound, fully trained' },
+    { key: 'Sales', cls: 'sales' },
+    { key: 'SST',   cls: 'sst'   },
+    { key: 'OB',    cls: 'ob'    },
   ];
   let html = '';
   DEPT_CONFIG.forEach(d => {
@@ -461,7 +531,6 @@ document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.t
     const adoptPct = (ds.active / ds.total * 100).toFixed(1);
     html += `<div class="dept-card ${d.cls}">
       <div class="dept-name ${d.cls}">${d.key}</div>
-      <div class="dept-meta">${d.meta} · ${ds.total} agents</div>
       <div class="dept-stats">
         <div><div class="dept-stat-label"><span class="metric-label">Agents Active<span class="tooltip-text">Number of agents who have quoted labor at least once since launch.</span></span></div>
           <div class="dept-stat-val">${ds.active} <span style="font-size:13px;color:var(--gray-text)">/ ${ds.total}</span></div></div>

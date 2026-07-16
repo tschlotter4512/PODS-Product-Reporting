@@ -25,9 +25,9 @@ const IL_DATA = {
   total_agents:  79,
 
   // Prior week values (for trajectory narrative)
-  prev_orders:  195,
-  prev_quotes:  757,
-  prev_savings: 47705,
+  prev_orders:  241,
+  prev_quotes:  859,
+  prev_savings: 53280,
 
   // Department breakdown
   depts: {
@@ -117,6 +117,257 @@ const IL_DATA = {
     "week": "7/6-7/12",
     "quotes": 93,
     "orders": 38
+  }
+],
+
+  // This week vs last week, by department
+  dept_wow: {
+  "Sales": {
+    "quotes_cur": 30,
+    "quotes_prev": 23,
+    "orders_cur": 14,
+    "orders_prev": 7
+  },
+  "SST": {
+    "quotes_cur": 33,
+    "quotes_prev": 22,
+    "orders_cur": 10,
+    "orders_prev": 6
+  },
+  "OB": {
+    "quotes_cur": 23,
+    "quotes_prev": 23,
+    "orders_cur": 7,
+    "orders_prev": 4
+  }
+},
+
+  // This week vs last week, by agent (only agents with activity in either week)
+  agent_wow: [
+  {
+    "name": "Almira Castro",
+    "dept": "SST",
+    "loc": "CNX",
+    "quotes_cur": 1,
+    "quotes_prev": 0,
+    "orders_cur": 1,
+    "orders_prev": 0
+  },
+  {
+    "name": "Amy Sisterman",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quotes_cur": 4,
+    "quotes_prev": 8,
+    "orders_cur": 4,
+    "orders_prev": 3
+  },
+  {
+    "name": "Carmie Nillama",
+    "dept": "SST",
+    "loc": "CNX",
+    "quotes_cur": 0,
+    "quotes_prev": 4,
+    "orders_cur": 0,
+    "orders_prev": 1
+  },
+  {
+    "name": "Catherine Saitta",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quotes_cur": 6,
+    "quotes_prev": 1,
+    "orders_cur": 6,
+    "orders_prev": 2
+  },
+  {
+    "name": "Charmaine Bacay",
+    "dept": "OB",
+    "loc": "CNX",
+    "quotes_cur": 5,
+    "quotes_prev": 10,
+    "orders_cur": 2,
+    "orders_prev": 3
+  },
+  {
+    "name": "Christina Morales",
+    "dept": "OB",
+    "loc": "CLW",
+    "quotes_cur": 4,
+    "quotes_prev": 2,
+    "orders_cur": 2,
+    "orders_prev": 1
+  },
+  {
+    "name": "Christopher Monaldi",
+    "dept": "OB",
+    "loc": "CLW",
+    "quotes_cur": 2,
+    "quotes_prev": 1,
+    "orders_cur": 1,
+    "orders_prev": 0
+  },
+  {
+    "name": "Donald Alfaro",
+    "dept": "SST",
+    "loc": "CLW",
+    "quotes_cur": 1,
+    "quotes_prev": 1,
+    "orders_cur": 1,
+    "orders_prev": 0
+  },
+  {
+    "name": "Felicia Knight",
+    "dept": "SST",
+    "loc": "CLW",
+    "quotes_cur": 2,
+    "quotes_prev": 2,
+    "orders_cur": 1,
+    "orders_prev": 1
+  },
+  {
+    "name": "Gregory D. Bell",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quotes_cur": 4,
+    "quotes_prev": 1,
+    "orders_cur": 1,
+    "orders_prev": 1
+  },
+  {
+    "name": "Jake Russel Bernardino",
+    "dept": "OB",
+    "loc": "CNX",
+    "quotes_cur": 1,
+    "quotes_prev": 4,
+    "orders_cur": 1,
+    "orders_prev": 0
+  },
+  {
+    "name": "Jeanielle Navarro",
+    "dept": "SST",
+    "loc": "CNX",
+    "quotes_cur": 7,
+    "quotes_prev": 6,
+    "orders_cur": 2,
+    "orders_prev": 2
+  },
+  {
+    "name": "Jessa Rey Belontindos",
+    "dept": "OB",
+    "loc": "CNX",
+    "quotes_cur": 11,
+    "quotes_prev": 5,
+    "orders_cur": 1,
+    "orders_prev": 0
+  },
+  {
+    "name": "Johnny Cardinale",
+    "dept": "SST",
+    "loc": "CLW",
+    "quotes_cur": 8,
+    "quotes_prev": 3,
+    "orders_cur": 3,
+    "orders_prev": 1
+  },
+  {
+    "name": "Katleen May Castro",
+    "dept": "Sales",
+    "loc": "CNX",
+    "quotes_cur": 4,
+    "quotes_prev": 9,
+    "orders_cur": 0,
+    "orders_prev": 0
+  },
+  {
+    "name": "Kimberly Thebeau",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quotes_cur": 9,
+    "quotes_prev": 3,
+    "orders_cur": 3,
+    "orders_prev": 1
+  },
+  {
+    "name": "Maria Concepcion Cauguiran",
+    "dept": "SST",
+    "loc": "CNX",
+    "quotes_cur": 5,
+    "quotes_prev": 0,
+    "orders_cur": 0,
+    "orders_prev": 0
+  },
+  {
+    "name": "Matthew Floming",
+    "dept": "OB",
+    "loc": "CLW",
+    "quotes_cur": 0,
+    "quotes_prev": 1,
+    "orders_cur": 0,
+    "orders_prev": 0
+  },
+  {
+    "name": "Micah Joy Abrao",
+    "dept": "SST",
+    "loc": "CNX",
+    "quotes_cur": 2,
+    "quotes_prev": 1,
+    "orders_cur": 0,
+    "orders_prev": 0
+  },
+  {
+    "name": "Nicole Slater",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quotes_cur": 3,
+    "quotes_prev": 0,
+    "orders_cur": 0,
+    "orders_prev": 0
+  },
+  {
+    "name": "Princess Heidi Sesma",
+    "dept": "Service",
+    "loc": "CNX",
+    "quotes_cur": 3,
+    "quotes_prev": 2,
+    "orders_cur": 3,
+    "orders_prev": 0
+  },
+  {
+    "name": "Sara Messenger",
+    "dept": "SST",
+    "loc": "CLW",
+    "quotes_cur": 5,
+    "quotes_prev": 5,
+    "orders_cur": 2,
+    "orders_prev": 1
+  },
+  {
+    "name": "Shannon Glendye",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quotes_cur": 0,
+    "quotes_prev": 1,
+    "orders_cur": 0,
+    "orders_prev": 0
+  },
+  {
+    "name": "Viviane Peux",
+    "dept": "SST",
+    "loc": "CLW",
+    "quotes_cur": 2,
+    "quotes_prev": 0,
+    "orders_cur": 0,
+    "orders_prev": 0
+  },
+  {
+    "name": "HaH Agent",
+    "dept": "HaH",
+    "loc": "\u2014",
+    "quotes_cur": 4,
+    "quotes_prev": 7,
+    "orders_cur": 4,
+    "orders_prev": 5
   }
 ],
 
