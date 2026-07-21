@@ -6,16 +6,16 @@ const IL_DATA = {
 
   // Program totals (cumulative since launch May 1, 2026)
   total_quotes:  960,
-  total_orders:  266,
-  conv_rate:     27.7,
+  total_orders:  259,
+  conv_rate:     27.0,
 
   // Cancel rate impact
-  cancel_delta_7d:  -5.8,
-  cancel_delta_30d: -2.2,
+  cancel_delta_7d:  -5.7,
+  cancel_delta_30d: -2.1,
   cancel_delta_primary_period: 7,   // whichever window (7 or 30) has the larger-magnitude delta — drives savings
-  cancel_savings:   64165,
-  annualized_savings:        296686,
-  projected_rollout_savings: "~$1,450,465",
+  cancel_savings:   61962,
+  annualized_savings:        286500,
+  projected_rollout_savings: "~$1,400,665",
   projected_rollout_agents:  220,
 
   labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
@@ -25,15 +25,15 @@ const IL_DATA = {
   total_agents:  130,
 
   // Prior week values (for trajectory narrative)
-  prev_orders:  262,
-  prev_quotes:  952,
-  prev_savings: 53280,
+  prev_orders:  266,
+  prev_quotes:  960,
+  prev_savings: 64165,
 
   // Department breakdown
   depts: {
-    Sales: { total: 66, active: 10, orders: 97, quotes: 311, pitch_rate: 21.3, conv_rate: 31.2 },
-    SST:   { total: 18,   active: 15,   orders: 97,   quotes: 369,   pitch_rate: 29.7,   conv_rate: 26.3   },
-    OB:    { total: 43,    active: 17,    orders: 29,    quotes: 188,    pitch_rate: 17.4,    conv_rate: 15.4    },
+    Sales: { total: 66, active: 10, orders: 95, quotes: 311, pitch_rate: 21.3, conv_rate: 30.5 },
+    SST:   { total: 18,   active: 15,   orders: 96,   quotes: 369,   pitch_rate: 29.7,   conv_rate: 26.0   },
+    OB:    { total: 43,    active: 17,    orders: 28,    quotes: 188,    pitch_rate: 17.4,    conv_rate: 14.9    },
   },
 
   // Silent agent breakdown by location + dept
@@ -438,18 +438,18 @@ const IL_DATA = {
   // Agent roster (cumulative since launch)
   agents: [
   {
-    "name": "HaH Agent",
-    "dept": "HaH",
-    "loc": "\u2014",
-    "quoted": 75,
-    "booked": 37
-  },
-  {
     "name": "Catherine Saitta",
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 56,
     "booked": 36
+  },
+  {
+    "name": "HaH Agent",
+    "dept": "HaH",
+    "loc": "\u2014",
+    "quoted": 75,
+    "booked": 34
   },
   {
     "name": "Amy Sisterman",
@@ -477,7 +477,7 @@ const IL_DATA = {
     "dept": "SST",
     "loc": "CNX",
     "quoted": 50,
-    "booked": 15
+    "booked": 14
   },
   {
     "name": "Sara Messenger",
@@ -491,14 +491,14 @@ const IL_DATA = {
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 29,
-    "booked": 12
+    "booked": 11
   },
   {
     "name": "Kimberly Thebeau",
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 40,
-    "booked": 9
+    "booked": 8
   },
   {
     "name": "Christina Morales",
@@ -554,7 +554,7 @@ const IL_DATA = {
     "dept": "OB",
     "loc": "CLW",
     "quoted": 18,
-    "booked": 5
+    "booked": 4
   },
   {
     "name": "Jake Russel Bernardino",
