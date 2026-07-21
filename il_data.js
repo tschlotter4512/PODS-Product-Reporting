@@ -22,16 +22,16 @@ const IL_DATA = {
 
   // Adoption
   active_agents: 45,
-  total_agents:  109,
+  total_agents:  130,
 
   // Prior week values (for trajectory narrative)
-  prev_orders:  261,
-  prev_quotes:  951,
+  prev_orders:  262,
+  prev_quotes:  952,
   prev_savings: 53280,
 
   // Department breakdown
   depts: {
-    Sales: { total: 45, active: 10, orders: 95, quotes: 310, pitch_rate: 21.2, conv_rate: 30.6 },
+    Sales: { total: 66, active: 10, orders: 95, quotes: 310, pitch_rate: 21.2, conv_rate: 30.6 },
     SST:   { total: 18,   active: 15,   orders: 95,   quotes: 366,   pitch_rate: 29.5,   conv_rate: 26.0   },
     OB:    { total: 43,    active: 17,    orders: 29,    quotes: 184,    pitch_rate: 17.1,    conv_rate: 15.8    },
   },
@@ -41,8 +41,8 @@ const IL_DATA = {
   {
     "loc": "CLW",
     "dept": "Sales",
-    "total": 43,
-    "silent": 35
+    "total": 64,
+    "silent": 56
   },
   {
     "loc": "CLW",
@@ -419,8 +419,8 @@ const IL_DATA = {
   },
   {
     "dept": "Sales",
-    "desc": "35 silent",
-    "silent": 35,
+    "desc": "56 silent",
+    "silent": 56,
     "est_containers": "~1,401",
     "est_missed": "~187",
     "priority": "High"
@@ -774,9 +774,30 @@ const IL_DATA = {
     "booked": 0
   },
   {
+    "name": "Alton Nelson",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "Amy Ashmore",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
     "name": "Anna Kathrisse Serrano",
     "dept": "SST",
     "loc": "CNX",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "Arlene Wethern",
+    "dept": "Sales",
+    "loc": "CLW",
     "quoted": 0,
     "booked": 0
   },
@@ -810,6 +831,20 @@ const IL_DATA = {
   },
   {
     "name": "Carol Brown",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "Caroline McMahon",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "Charles Chambliss",
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 0,
@@ -893,6 +928,13 @@ const IL_DATA = {
     "booked": 0
   },
   {
+    "name": "Frank Miedzianowski",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
     "name": "Frederick Hutchinson",
     "dept": "OB",
     "loc": "CLW",
@@ -914,6 +956,13 @@ const IL_DATA = {
     "booked": 0
   },
   {
+    "name": "Gentian Grezda",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
     "name": "Gimarie Barastas",
     "dept": "OB",
     "loc": "CNX",
@@ -929,6 +978,13 @@ const IL_DATA = {
   },
   {
     "name": "Heidi Gathen",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "Henry Noble",
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 0,
@@ -971,6 +1027,13 @@ const IL_DATA = {
   },
   {
     "name": "James Jackson",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "James Meckfessel",
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 0,
@@ -1026,6 +1089,13 @@ const IL_DATA = {
     "booked": 0
   },
   {
+    "name": "Jorden N. Murray",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
     "name": "Joy Hall",
     "dept": "Sales",
     "loc": "CLW",
@@ -1068,9 +1138,37 @@ const IL_DATA = {
     "booked": 0
   },
   {
+    "name": "Latoya Jones",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "Leanne Souza",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
     "name": "Lienard Bryan Organo",
     "dept": "OB",
     "loc": "CNX",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "Lynna Stites",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "Madeline Quiros",
+    "dept": "Sales",
+    "loc": "CLW",
     "quoted": 0,
     "booked": 0
   },
@@ -1124,6 +1222,13 @@ const IL_DATA = {
     "booked": 0
   },
   {
+    "name": "Patricia Paino",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
     "name": "Rene Dunn",
     "dept": "OB",
     "loc": "CLW",
@@ -1152,6 +1257,13 @@ const IL_DATA = {
     "booked": 0
   },
   {
+    "name": "Sakeema McCray",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
     "name": "Sandra Haun",
     "dept": "OB",
     "loc": "CLW",
@@ -1159,7 +1271,21 @@ const IL_DATA = {
     "booked": 0
   },
   {
+    "name": "Scot Horowitz",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
     "name": "Scott Scalzo",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "Scott Schneider",
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 0,
@@ -1180,6 +1306,20 @@ const IL_DATA = {
     "booked": 0
   },
   {
+    "name": "Stephen Hardwick",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "Tanisha Lee",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
     "name": "Thaddaeus Paulo Malig",
     "dept": "OB",
     "loc": "CNX",
@@ -1188,6 +1328,13 @@ const IL_DATA = {
   },
   {
     "name": "Tracy Heath",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 0,
+    "booked": 0
+  },
+  {
+    "name": "Valerie Mabe",
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 0,
