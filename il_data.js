@@ -5,17 +5,17 @@ const IL_DATA = {
   updated_date: "July 19, 2026",
 
   // Program totals (cumulative since launch May 1, 2026)
-  total_quotes:  952,
-  total_orders:  262,
-  conv_rate:     27.5,
+  total_quotes:  960,
+  total_orders:  266,
+  conv_rate:     27.7,
 
   // Cancel rate impact
-  cancel_delta_7d:  -5.3,
-  cancel_delta_30d: -2.1,
+  cancel_delta_7d:  -5.8,
+  cancel_delta_30d: -2.2,
   cancel_delta_primary_period: 7,   // whichever window (7 or 30) has the larger-magnitude delta — drives savings
-  cancel_savings:   53280,
-  annualized_savings:        246356,
-  projected_rollout_savings: "~$1,204,407",
+  cancel_savings:   64165,
+  annualized_savings:        296686,
+  projected_rollout_savings: "~$1,450,465",
   projected_rollout_agents:  220,
 
   labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
@@ -31,9 +31,9 @@ const IL_DATA = {
 
   // Department breakdown
   depts: {
-    Sales: { total: 66, active: 10, orders: 95, quotes: 310, pitch_rate: 21.2, conv_rate: 30.6 },
-    SST:   { total: 18,   active: 15,   orders: 95,   quotes: 366,   pitch_rate: 29.5,   conv_rate: 26.0   },
-    OB:    { total: 43,    active: 17,    orders: 29,    quotes: 184,    pitch_rate: 17.1,    conv_rate: 15.8    },
+    Sales: { total: 66, active: 10, orders: 97, quotes: 311, pitch_rate: 21.3, conv_rate: 31.2 },
+    SST:   { total: 18,   active: 15,   orders: 97,   quotes: 369,   pitch_rate: 29.7,   conv_rate: 26.3   },
+    OB:    { total: 43,    active: 17,    orders: 29,    quotes: 188,    pitch_rate: 17.4,    conv_rate: 15.4    },
   },
 
   // Silent agent breakdown by location + dept
@@ -111,12 +111,12 @@ const IL_DATA = {
   {
     "week": "7/6-7/12",
     "quotes": 93,
-    "orders": 37
+    "orders": 36
   },
   {
     "week": "7/13-7/19",
     "quotes": 99,
-    "orders": 35
+    "orders": 31
   }
 ],
 
@@ -125,7 +125,7 @@ const IL_DATA = {
   "Sales": {
     "quotes_cur": 29,
     "quotes_prev": 30,
-    "orders_cur": 14,
+    "orders_cur": 12,
     "orders_prev": 14
   },
   "SST": {
@@ -177,7 +177,7 @@ const IL_DATA = {
     "loc": "CLW",
     "quotes_cur": 9,
     "quotes_prev": 6,
-    "orders_cur": 11,
+    "orders_cur": 9,
     "orders_prev": 6
   },
   {
@@ -402,8 +402,8 @@ const IL_DATA = {
     "loc": "\u2014",
     "quotes_cur": 17,
     "quotes_prev": 4,
-    "orders_cur": 9,
-    "orders_prev": 4
+    "orders_cur": 7,
+    "orders_prev": 3
   }
 ],
 
@@ -449,14 +449,14 @@ const IL_DATA = {
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 56,
-    "booked": 35
+    "booked": 36
   },
   {
     "name": "Amy Sisterman",
     "dept": "Sales",
     "loc": "CLW",
-    "quoted": 80,
-    "booked": 26
+    "quoted": 81,
+    "booked": 27
   },
   {
     "name": "Jeanielle Navarro",
@@ -470,7 +470,7 @@ const IL_DATA = {
     "dept": "SST",
     "loc": "CLW",
     "quoted": 57,
-    "booked": 15
+    "booked": 17
   },
   {
     "name": "Carmie Nillama",
@@ -483,7 +483,7 @@ const IL_DATA = {
     "name": "Sara Messenger",
     "dept": "SST",
     "loc": "CLW",
-    "quoted": 40,
+    "quoted": 41,
     "booked": 12
   },
   {
@@ -511,7 +511,7 @@ const IL_DATA = {
     "name": "Charmaine Bacay",
     "dept": "OB",
     "loc": "CNX",
-    "quoted": 62,
+    "quoted": 64,
     "booked": 7
   },
   {
@@ -532,7 +532,7 @@ const IL_DATA = {
     "name": "Felicia Knight",
     "dept": "SST",
     "loc": "CLW",
-    "quoted": 27,
+    "quoted": 28,
     "booked": 6
   },
   {
@@ -560,7 +560,7 @@ const IL_DATA = {
     "name": "Jake Russel Bernardino",
     "dept": "OB",
     "loc": "CNX",
-    "quoted": 11,
+    "quoted": 12,
     "booked": 4
   },
   {
@@ -581,14 +581,14 @@ const IL_DATA = {
     "name": "Micah Joy Abrao",
     "dept": "SST",
     "loc": "CNX",
-    "quoted": 10,
+    "quoted": 11,
     "booked": 3
   },
   {
     "name": "Jessa Rey Belontindos",
     "dept": "OB",
     "loc": "CNX",
-    "quoted": 35,
+    "quoted": 36,
     "booked": 2
   },
   {
