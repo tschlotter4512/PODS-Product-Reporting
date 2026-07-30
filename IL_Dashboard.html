@@ -375,17 +375,13 @@ document.getElementById('attach-rate').textContent = IL_DATA.labor_attach_rate.t
 
 // ── Financial cards ──────────────────────────────────────────────────────────
 (function() {
-  const savingsWoW = IL_DATA.cancel_savings - IL_DATA.prev_savings;
-  const wowText = savingsWoW > 0
-    ? `Up from $${IL_DATA.prev_savings.toLocaleString()} last week — savings continue to accelerate as more agents activate.`
-    : `$${IL_DATA.prev_savings.toLocaleString()} last week.`;
   const cancelAbs = Math.abs(primaryDelta);
 
   document.getElementById('financial-cards').innerHTML = `
     <div class="win-card">
       <div style="font-size:24px;margin-bottom:8px;">💰</div>
       <div class="win-title">$${IL_DATA.cancel_savings.toLocaleString()} in Cancel Rate Savings</div>
-      <div class="win-body">An <strong>${cancelAbs} percentage point</strong> reduction in ${primaryPeriod}-day cancel rate on orders with labor booked, measured against the same agent's orders without labor. ${wowText}</div>
+      <div class="win-body">An <strong>${cancelAbs} percentage point</strong> reduction in ${primaryPeriod}-day cancel rate on orders with labor booked, measured against the same agent's orders without labor.</div>
     </div>
     <div class="proj-card">
       <div class="proj-label">Annualized — Current Pilot (${IL_DATA.active_agents} active agents)</div>
