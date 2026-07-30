@@ -10,12 +10,12 @@ const IL_DATA = {
   conv_rate:     29.7,
 
   // Cancel rate impact
-  cancel_delta_7d:  -6.0,
-  cancel_delta_30d: -4.7,
-  cancel_delta_primary_period: 7,   // whichever window (7 or 30) has the larger-magnitude delta — drives savings
-  cancel_savings:   86003,
-  annualized_savings:        365293,
-  projected_rollout_savings: "~$3,108,874",
+  cancel_delta_7d:  -3.6,
+  cancel_delta_30d: -7.3,
+  cancel_delta_primary_period: 30,   // whichever window (7 or 30) has the larger-magnitude delta — drives savings
+  cancel_savings:   96561,
+  annualized_savings:        410137,
+  projected_rollout_savings: "~$3,490,530",
   projected_rollout_agents:  400,
 
   labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
@@ -31,9 +31,9 @@ const IL_DATA = {
 
   // Department breakdown
   depts: {
-    Sales: { total: 66, active: 11, orders: 135, quotes: 347, pitch_rate: 21.7, conv_rate: 38.9 },
-    SST:   { total: 18,   active: 16,   orders: 122,   quotes: 389,   pitch_rate: 28.4,   conv_rate: 31.4   },
-    OB:    { total: 43,    active: 17,    orders: 34,    quotes: 200,    pitch_rate: 16.9,    conv_rate: 17.0    },
+    Sales: { total: 66, active: 11, orders: 135, quotes: 347, pitch_rate: 2.2, conv_rate: 38.9 },
+    SST:   { total: 18,   active: 16,   orders: 122,   quotes: 389,   pitch_rate: 12.7,   conv_rate: 31.4   },
+    OB:    { total: 43,    active: 17,    orders: 34,    quotes: 200,    pitch_rate: 3.1,    conv_rate: 17.0    },
   },
 
   // Silent agent breakdown by location + dept
