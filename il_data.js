@@ -15,8 +15,8 @@ const IL_DATA = {
   cancel_delta_primary_period: 7,   // whichever window (7 or 30) has the larger-magnitude delta — drives savings
   cancel_savings:   86003,
   annualized_savings:        365293,
-  projected_rollout_savings: "~$1,709,881",
-  projected_rollout_agents:  220,
+  projected_rollout_savings: "~$3,108,874",
+  projected_rollout_agents:  400,
 
   labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
 
@@ -27,7 +27,7 @@ const IL_DATA = {
   // Prior week values (for trajectory narrative)
   prev_orders:  307,
   prev_quotes:  1034,
-  prev_savings: 80221,
+  prev_savings: 86003,
 
   // Department breakdown
   depts: {
