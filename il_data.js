@@ -5,35 +5,35 @@ const IL_DATA = {
   updated_date: "July 26, 2026",
 
   // Program totals (cumulative since launch May 1, 2026)
-  total_quotes:  1034,
-  total_orders:  307,
-  conv_rate:     29.7,
+  total_quotes:  1048,
+  total_orders:  309,
+  conv_rate:     29.5,
 
   // Cancel rate impact
-  cancel_delta_7d:  -3.6,
-  cancel_delta_30d: -7.3,
+  cancel_delta_7d:  -7.4,
+  cancel_delta_30d: -9.7,
   cancel_delta_primary_period: 30,   // whichever window (7 or 30) has the larger-magnitude delta — drives savings
-  cancel_savings:   96561,
-  annualized_savings:        410137,
-  projected_rollout_savings: "~$3,490,530",
+  cancel_savings:   52722,
+  annualized_savings:        223934,
+  projected_rollout_savings: "~$1,866,114",
   projected_rollout_agents:  400,
 
   labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
 
   // Adoption
-  active_agents: 47,
+  active_agents: 48,
   total_agents:  130,
 
   // Prior week values (for trajectory narrative)
   prev_orders:  307,
   prev_quotes:  1034,
-  prev_savings: 86003,
+  prev_savings: 96561,
 
   // Department breakdown
   depts: {
-    Sales: { total: 66, active: 11, orders: 135, quotes: 347, pitch_rate: 2.2, conv_rate: 38.9 },
-    SST:   { total: 18,   active: 16,   orders: 122,   quotes: 389,   pitch_rate: 12.7,   conv_rate: 31.4   },
-    OB:    { total: 43,    active: 17,    orders: 34,    quotes: 200,    pitch_rate: 3.1,    conv_rate: 17.0    },
+    Sales: { total: 66, active: 12, orders: 137, quotes: 355, pitch_rate: 2.2, conv_rate: 38.6 },
+    SST:   { total: 18,   active: 16,   orders: 122,   quotes: 394,   pitch_rate: 12.9,   conv_rate: 31.0   },
+    OB:    { total: 43,    active: 17,    orders: 34,    quotes: 201,    pitch_rate: 3.1,    conv_rate: 16.9    },
   },
 
   // Silent agent breakdown by location + dept
@@ -42,7 +42,7 @@ const IL_DATA = {
     "loc": "CLW",
     "dept": "Sales",
     "total": 64,
-    "silent": 55
+    "silent": 54
   },
   {
     "loc": "CLW",
@@ -464,8 +464,8 @@ const IL_DATA = {
   },
   {
     "dept": "Sales",
-    "desc": "55 silent",
-    "silent": 55,
+    "desc": "54 silent",
+    "silent": 54,
     "est_containers": "~1,401",
     "est_missed": "~187",
     "priority": "High"
@@ -493,7 +493,7 @@ const IL_DATA = {
     "name": "Amy Sisterman",
     "dept": "Sales",
     "loc": "CLW",
-    "quoted": 91,
+    "quoted": 96,
     "booked": 33
   },
   {
@@ -507,7 +507,7 @@ const IL_DATA = {
     "name": "Sara Messenger",
     "dept": "SST",
     "loc": "CLW",
-    "quoted": 48,
+    "quoted": 49,
     "booked": 20
   },
   {
@@ -623,6 +623,13 @@ const IL_DATA = {
     "booked": 5
   },
   {
+    "name": "Michael Alcalde",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 7,
+    "booked": 5
+  },
+  {
     "name": "Katleen May Castro",
     "dept": "Sales",
     "loc": "CNX",
@@ -640,7 +647,7 @@ const IL_DATA = {
     "name": "Jake Russel Bernardino",
     "dept": "OB",
     "loc": "CNX",
-    "quoted": 12,
+    "quoted": 13,
     "booked": 4
   },
   {
@@ -658,13 +665,6 @@ const IL_DATA = {
     "booked": 3
   },
   {
-    "name": "Michael Alcalde",
-    "dept": "Sales",
-    "loc": "CLW",
-    "quoted": 5,
-    "booked": 3
-  },
-  {
     "name": "Jessa Rey Belontindos",
     "dept": "OB",
     "loc": "CNX",
@@ -675,7 +675,7 @@ const IL_DATA = {
     "name": "Maria Concepcion Cauguiran",
     "dept": "SST",
     "loc": "CNX",
-    "quoted": 21,
+    "quoted": 24,
     "booked": 2
   },
   {
@@ -728,6 +728,13 @@ const IL_DATA = {
     "booked": 0
   },
   {
+    "name": "Viviane Peux",
+    "dept": "SST",
+    "loc": "CLW",
+    "quoted": 5,
+    "booked": 0
+  },
+  {
     "name": "Dale Besida",
     "dept": "OB",
     "loc": "CLW",
@@ -745,13 +752,6 @@ const IL_DATA = {
     "name": "Syralee Mae Gamil",
     "dept": "SST",
     "loc": "CNX",
-    "quoted": 4,
-    "booked": 0
-  },
-  {
-    "name": "Viviane Peux",
-    "dept": "SST",
-    "loc": "CLW",
     "quoted": 4,
     "booked": 0
   },
@@ -788,6 +788,13 @@ const IL_DATA = {
     "dept": "OB",
     "loc": "CLW",
     "quoted": 2,
+    "booked": 0
+  },
+  {
+    "name": "Donavan O. Mitchell",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 1,
     "booked": 0
   },
   {
@@ -946,13 +953,6 @@ const IL_DATA = {
   },
   {
     "name": "Dexter Weaver",
-    "dept": "Sales",
-    "loc": "CLW",
-    "quoted": 0,
-    "booked": 0
-  },
-  {
-    "name": "Donavan O. Mitchell",
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 0,
