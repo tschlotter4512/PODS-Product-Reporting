@@ -10,12 +10,12 @@ const IL_DATA = {
   conv_rate:     29.5,
 
   // Cancel rate impact
-  cancel_delta_7d:  -7.4,
-  cancel_delta_30d: -9.7,
+  cancel_delta_7d:  -8.2,
+  cancel_delta_30d: -9.5,
   cancel_delta_primary_period: 30,   // whichever window (7 or 30) has the larger-magnitude delta — drives savings
-  cancel_savings:   52722,
-  annualized_savings:        223934,
-  projected_rollout_savings: "~$1,866,114",
+  cancel_savings:   54834,
+  annualized_savings:        232904,
+  projected_rollout_savings: "~$1,940,869",
   projected_rollout_agents:  400,
 
   labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
@@ -25,9 +25,9 @@ const IL_DATA = {
   total_agents:  130,
 
   // Prior week values (for trajectory narrative)
-  prev_orders:  307,
-  prev_quotes:  1034,
-  prev_savings: 96561,
+  prev_orders:  309,
+  prev_quotes:  1048,
+  prev_savings: 52722,
 
   // Department breakdown
   depts: {
