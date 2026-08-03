@@ -25,9 +25,9 @@ const IL_DATA = {
   total_agents:  130,
 
   // Prior week values (for trajectory narrative)
-  prev_orders:  309,
-  prev_quotes:  1048,
-  prev_savings: 54834,
+  prev_orders:  317,
+  prev_quotes:  1075,
+  prev_savings: 53757,
 
   // Department breakdown
   depts: {
