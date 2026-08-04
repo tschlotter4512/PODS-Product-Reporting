@@ -12,8 +12,59 @@ const IL_DATA = {
   // Cancel rate impact
   cancel_delta_7d:  -5.7,
   cancel_delta_30d: -4.0,
-  cancel_delta_primary_period: 30,   // whichever window (7 or 30) has the larger-magnitude delta — drives savings
+  cancel_delta_primary_period: 30,   // always 30 — more sample, less week-to-week whiplash than the 7-day window
   cancel_savings:   32560,
+
+  // Cancel rate by BOOKING-MONTH cohort. The blended delta above hides drift —
+  // a strong early month keeps propping it up long after the effect has faded.
+  // mature=false means that month's orders haven't all had 30 days to cancel yet.
+  cancel_by_month: [
+  {
+    "month": "2026-04",
+    "label": "Apr",
+    "labor_containers": 1,
+    "mature": true,
+    "labor_cr": null,
+    "regular_cr": null,
+    "delta": null
+  },
+  {
+    "month": "2026-05",
+    "label": "May",
+    "labor_containers": 87,
+    "mature": true,
+    "labor_cr": 17.2,
+    "regular_cr": 21.6,
+    "delta": -4.3
+  },
+  {
+    "month": "2026-06",
+    "label": "Jun",
+    "labor_containers": 117,
+    "mature": true,
+    "labor_cr": 17.9,
+    "regular_cr": 24.2,
+    "delta": -6.3
+  },
+  {
+    "month": "2026-07",
+    "label": "Jul",
+    "labor_containers": 15,
+    "mature": false,
+    "labor_cr": 40.0,
+    "regular_cr": 26.6,
+    "delta": 13.4
+  },
+  {
+    "month": "2026-08",
+    "label": "Aug",
+    "labor_containers": 0,
+    "mature": false,
+    "labor_cr": null,
+    "regular_cr": null,
+    "delta": null
+  }
+],
   annualized_savings:        127887,
   projected_rollout_savings: "~$1,023,098",
   projected_rollout_agents:  400,
@@ -27,7 +78,7 @@ const IL_DATA = {
   // Prior week values (for trajectory narrative)
   prev_orders:  317,
   prev_quotes:  1075,
-  prev_savings: 53757,
+  prev_savings: 32560,
 
   // Department breakdown
   depts: {
