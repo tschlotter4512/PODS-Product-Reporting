@@ -10,10 +10,11 @@ const IL_DATA = {
   conv_rate:     29.5,
 
   // Cancel rate impact
-  cancel_delta_7d:  -5.7,
+  cancel_delta_7d:  -5.6,
   cancel_delta_30d: -4.0,
   cancel_delta_primary_period: 30,   // always 30 — more sample, less week-to-week whiplash than the 7-day window
-  cancel_savings:   32560,
+  cancel_savings:   32412,
+  ecr:              3700,   // expected container revenue — the $ multiplier in the savings calc
 
   // Cancel rate by BOOKING-MONTH cohort. The blended delta above hides drift —
   // a strong early month keeps propping it up long after the effect has faded.
@@ -24,6 +25,7 @@ const IL_DATA = {
     "label": "May",
     "labor_containers": 87,
     "mature": true,
+    "complete_after": "Jun 30",
     "labor_cr": 17.2,
     "regular_cr": 21.6,
     "delta": -4.3
@@ -33,6 +35,7 @@ const IL_DATA = {
     "label": "Jun",
     "labor_containers": 117,
     "mature": true,
+    "complete_after": "Jul 30",
     "labor_cr": 17.9,
     "regular_cr": 24.2,
     "delta": -6.3
@@ -42,6 +45,7 @@ const IL_DATA = {
     "label": "Jul",
     "labor_containers": 15,
     "mature": false,
+    "complete_after": "Aug 30",
     "labor_cr": 40.0,
     "regular_cr": 26.6,
     "delta": 13.4
@@ -51,6 +55,7 @@ const IL_DATA = {
     "label": "Aug",
     "labor_containers": 0,
     "mature": false,
+    "complete_after": "Sep 30",
     "labor_cr": null,
     "regular_cr": null,
     "delta": null
@@ -60,28 +65,32 @@ const IL_DATA = {
   // Raw numbers behind each delta — powers the hover tooltips on the cancel cards.
   cancel_detail_7d:  {
   "days": 7,
-  "labor_containers": 316,
+  "labor_containers": 315,
   "labor_cancelled": 17,
   "labor_cr": 5.4,
   "regular_containers": 8749,
   "regular_cancelled": 938,
   "regular_cr": 10.7,
   "agents": 37,
-  "cutoff": "2026-07-26"
+  "cutoff": "2026-07-26",
+  "covers_from": "May 1",
+  "covers_to": "Jul 26"
 },
   cancel_detail_30d: {
   "days": 30,
-  "labor_containers": 220,
+  "labor_containers": 219,
   "labor_cancelled": 42,
-  "labor_cr": 19.1,
+  "labor_cr": 19.2,
   "regular_containers": 5328,
   "regular_cancelled": 1181,
   "regular_cr": 22.2,
   "agents": 31,
-  "cutoff": "2026-07-03"
+  "cutoff": "2026-07-03",
+  "covers_from": "May 1",
+  "covers_to": "Jul 3"
 },
-  annualized_savings:        127887,
-  projected_rollout_savings: "~$1,023,098",
+  annualized_savings:        127306,
+  projected_rollout_savings: "~$1,018,448",
   projected_rollout_agents:  400,
 
   labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
