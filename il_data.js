@@ -10,12 +10,12 @@ const IL_DATA = {
   conv_rate:     29.5,
 
   // Cancel rate impact
-  cancel_delta_7d:  -2.9,
-  cancel_delta_30d: -8.8,
+  cancel_delta_7d:  -5.7,
+  cancel_delta_30d: -4.0,
   cancel_delta_primary_period: 30,   // whichever window (7 or 30) has the larger-magnitude delta — drives savings
-  cancel_savings:   53757,
-  annualized_savings:        211144,
-  projected_rollout_savings: "~$1,689,149",
+  cancel_savings:   32560,
+  annualized_savings:        127887,
+  projected_rollout_savings: "~$1,023,098",
   projected_rollout_agents:  400,
 
   labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
