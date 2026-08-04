@@ -14,7 +14,18 @@ const IL_DATA = {
   cancel_delta_30d: -4.4,
   cancel_delta_primary_period: 30,   // always 30 — more sample, less week-to-week whiplash than the 7-day window
   cancel_savings:   40212,
-  ecr:              3700,   // expected container revenue — the $ multiplier in the savings calc
+  ecr:              3700,   // avg revenue from one container — converts saved containers to $
+
+  // 95% band on the 30-day delta and the savings that follow from it. Effective sample
+  // is labor ORDERS, not containers — containers on the same order cancel together.
+  cancel_range: {
+  "delta_low": -10.2,
+  "delta_high": 1.4,
+  "savings_low": 0,
+  "savings_high": 93218,
+  "margin_pp": 5.8,
+  "effective_n": 173
+},
 
   // Cancel rate by BOOKING-MONTH cohort. The blended delta above hides drift —
   // a strong early month keeps propping it up long after the effect has faded.
@@ -89,15 +100,25 @@ const IL_DATA = {
   "covers_from": "May 1",
   "covers_to": "Jul 3"
 },
-  annualized_savings:        157942,
-  projected_rollout_savings: "~$1,214,941",
+  projected_rollout_savings: "~$1,238,764",
   projected_rollout_agents:  400,
+  projected_rollout_detail: {
+  "savings": 40212,
+  "months_elapsed": 3.06,
+  "monthly_savings": 13162,
+  "active_agents": 51,
+  "monthly_per_agent": 258,
+  "rollout_agents": 400,
+  "containers_actual": 10.9,
+  "containers_implied": 335
+},
 
   // Computed, not manual. Distinct PODS orders with labor / all orders booked by roster
   // agents, since launch. NOT maturity-filtered — attachment is known at booking.
   labor_attach_rate: 0.99,
   labor_attach_detail: {
   "labor_orders": 270,
+  "labor_containers": 375,
   "total_orders": 27284,
   "agents": 33,
   "roster": 129,
@@ -106,13 +127,13 @@ const IL_DATA = {
 },
 
   // Adoption
-  active_agents: 52,
-  total_agents:  130,
+  active_agents: 51,
+  total_agents:  129,
 
   // Prior week values (for trajectory narrative)
-  prev_orders:  317,
-  prev_quotes:  1075,
-  prev_savings: 32412,
+  prev_orders:  323,
+  prev_quotes:  1090,
+  prev_savings: 40212,
 
   // Department breakdown
   depts: {
@@ -550,26 +571,26 @@ const IL_DATA = {
   opp_table: [
   {
     "dept": "OB",
-    "desc": "All 43 fully trained",
+    "desc": "26 of 43 silent",
     "silent": 26,
-    "est_containers": "~3,320",
-    "est_missed": "~442",
+    "est_containers": "5,099",
+    "est_missed": "235",
     "priority": "Critical"
   },
   {
     "dept": "Sales",
-    "desc": "50 silent",
+    "desc": "50 of 66 silent",
     "silent": 50,
-    "est_containers": "~1,401",
-    "est_missed": "~187",
+    "est_containers": "16,173",
+    "est_missed": "746",
     "priority": "High"
   },
   {
     "dept": "SST",
-    "desc": "2 silent",
+    "desc": "2 of 18 silent",
     "silent": 2,
-    "est_containers": "~361",
-    "est_missed": "~48",
+    "est_containers": "456",
+    "est_missed": "21",
     "priority": "Moderate"
   }
 ],
