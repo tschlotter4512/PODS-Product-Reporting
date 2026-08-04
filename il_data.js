@@ -20,15 +20,6 @@ const IL_DATA = {
   // mature=false means that month's orders haven't all had 30 days to cancel yet.
   cancel_by_month: [
   {
-    "month": "2026-04",
-    "label": "Apr",
-    "labor_containers": 1,
-    "mature": true,
-    "labor_cr": null,
-    "regular_cr": null,
-    "delta": null
-  },
-  {
     "month": "2026-05",
     "label": "May",
     "labor_containers": 87,
@@ -65,6 +56,30 @@ const IL_DATA = {
     "delta": null
   }
 ],
+
+  // Raw numbers behind each delta — powers the hover tooltips on the cancel cards.
+  cancel_detail_7d:  {
+  "days": 7,
+  "labor_containers": 316,
+  "labor_cancelled": 17,
+  "labor_cr": 5.4,
+  "regular_containers": 8749,
+  "regular_cancelled": 938,
+  "regular_cr": 10.7,
+  "agents": 37,
+  "cutoff": "2026-07-26"
+},
+  cancel_detail_30d: {
+  "days": 30,
+  "labor_containers": 220,
+  "labor_cancelled": 42,
+  "labor_cr": 19.1,
+  "regular_containers": 5328,
+  "regular_cancelled": 1181,
+  "regular_cr": 22.2,
+  "agents": 31,
+  "cutoff": "2026-07-03"
+},
   annualized_savings:        127887,
   projected_rollout_savings: "~$1,023,098",
   projected_rollout_agents:  400,
