@@ -29,8 +29,13 @@ SF_WH       = 'ELT_WH'
 
 # ── Agent roster ───────────────────────────────────────────────────────────────
 # (dashboard_name, group, sf_owner_id, network_id, five9_name)
-# five9_name = how the agent appears in FIVE9_CALL_DATA."AGENT NAME"
-# network_id = Agent Container Booked By in ORDER_CONTAINER_SALES_FACT
+# network_id = Agent Container Booked By in ORDER_CONTAINER_SALES_FACT, and also
+#              the local-part of FIVE9_CALL_DATA."AGENT EMAIL" (case-insensitive).
+#              This is the join key for ALL Five9 metrics.
+# five9_name = DISPLAY ONLY. Do not join on this. Five9 display names are free
+#              text and drift from reality ("Ferdinand Carlo Canete" vs the
+#              roster's "Caete", "Christian jerick Sanchez" vs "Jerick"). Joining
+#              on it silently dropped ~1,350 calls/week until 2026-08-05.
 
 AGENTS = [
     # CLW
@@ -80,14 +85,94 @@ AGENTS = [
     ('John Rick Elumba',             'CNX', '005Hu00000SZlaqIAD', 'JRElumba',     'John Rick Elumba'),
 ]
 
+# ── Agent tenure ───────────────────────────────────────────────────────────────
+# network_id → (start_date, end_date). end_date None = still active.
+# An agent is only included in weeks whose Monday falls inside their tenure, so a
+# departed agent stops producing empty rows without erasing the weeks they worked.
+#
+# To retire an agent: set end_date to the Monday of their last active week.
+# To add one: add to AGENTS above and add a row here (missing = active since 2025).
+#
+# Ported from backfill_ob_dashboard.py 2026-08-10. Keyed on network_id rather than
+# name — the roster in that file was transcribed by hand once already and picked up
+# three typos in the process (see the roster comment above).
+
+TENURE = {
+    'SHaun': (date(2025, 1, 1), None),
+    'FHutchinson': (date(2026, 3, 2), None),   # off OB until W62; returned 3/2/2026
+    'CMonaldi': (date(2025, 1, 1), None),
+    'MPetersen': (date(2025, 1, 1), None),
+    'MDFloming': (date(2025, 1, 1), None),
+    'mfichtl': (date(2025, 1, 1), None),
+    'RJStoffregen': (date(2025, 1, 1), None),
+    'DCARREIRO': (date(2025, 1, 1), None),
+    'cmorales': (date(2025, 1, 1), None),
+    'KHewitt': (date(2025, 1, 1), None),
+    'DJBesida': (date(2025, 1, 1), None),
+    'ESGoldring': (date(2025, 1, 1), None),
+    'NDunn': (date(2025, 1, 1), None),
+    'CBacay': (date(2025, 1, 1), None),
+    'EViray': (date(2025, 5, 5), None),
+    'GBarastas': (date(2025, 5, 5), None),
+    'JGalve': (date(2026, 2, 23), None),
+    'CABarredo': (date(2025, 1, 1), None),
+    'JRBelotindos': (date(2025, 1, 1), None),
+    'LBOrgano': (date(2026, 2, 23), None),
+    'SFirmalino': (date(2025, 1, 1), None),
+    'EMirandilla': (date(2025, 1, 1), None),
+    'HLozano': (date(2025, 1, 1), None),
+    'FCCaete': (date(2025, 1, 1), None),
+    'EDionglay': (date(2025, 5, 5), None),
+    'MOMiguel': (date(2026, 2, 16), None),
+    'JMMolina': (date(2025, 5, 5), None),
+    'MAClavel': (date(2025, 1, 1), None),
+    'MCPlacido': (date(2025, 5, 5), None),
+    'JRBernardino': (date(2025, 1, 1), None),
+    'MMLee': (date(2025, 1, 1), None),
+    'JVergaraJr': (date(2026, 2, 23), None),
+    'ECablao': (date(2025, 5, 5), None),
+    'SMFrancisco': (date(2025, 5, 5), None),
+    'ANavarro': (date(2026, 2, 23), None),
+    'JRebualos': (date(2025, 1, 1), None),
+    'TPMalig': (date(2025, 5, 5), None),
+    'BValdez': (date(2025, 5, 5), None),
+    'IVerona': (date(2026, 2, 23), None),
+    'JRRosites': (date(2026, 2, 23), None),
+    'IMLanestosa': (date(2026, 2, 23), None),
+    'CjSanchez': (date(2026, 2, 23), None),
+    'JRElumba': (date(2026, 5, 18), None),
+}
+
+_roster_nids = {a[3] for a in AGENTS}
+if set(TENURE) != _roster_nids:
+    # A typo'd key here would silently fall back to the default and quietly
+    # re-include a departed agent — the same class of bug as the name join.
+    raise SystemExit(
+        'ERROR: TENURE keys do not match the AGENTS roster.\n'
+        f'  in TENURE only: {sorted(set(TENURE) - _roster_nids) or "-"}\n'
+        f'  in AGENTS only: {sorted(_roster_nids - set(TENURE)) or "-"}'
+    )
+
+def is_active(nid, monday):
+    start, end = TENURE.get(nid, (date(2025, 1, 1), None))
+    if monday < start:
+        return False
+    return end is None or monday <= end
+
 # Derived lookups
 BY_FIVE9   = {a[4]: a for a in AGENTS}   # five9_name → agent tuple
 BY_NID     = {a[3]: a for a in AGENTS}   # network_id → agent tuple
 BY_SF_ID   = {a[2]: a for a in AGENTS}   # sf_owner_id → agent tuple
 BY_NAME    = {a[0]: a for a in AGENTS}   # dashboard_name → agent tuple
 
-CLW_FIVE9  = [a[4] for a in AGENTS if a[1] == 'CLW']
-CNX_FIVE9  = [a[4] for a in AGENTS if a[1] == 'CNX']
+ALL_NIDS   = [a[3].lower() for a in AGENTS]
+CLW_NIDS   = [a[3].lower() for a in AGENTS if a[1] == 'CLW']
+CNX_NIDS   = [a[3].lower() for a in AGENTS if a[1] == 'CNX']
+
+# Five9 join key: the local-part of "AGENT EMAIL", which equals network_id.
+# Verified 2026-08-05: 42/43 roster agents match exactly; only 0.05% of OB calls
+# lack an email (those also have a blank agent name).
+FIVE9_NID = 'LOWER(SPLIT_PART(input_json:"AGENT EMAIL"::STRING, \'@\', 1))'
 
 def _sql_list(items):
     return ', '.join(f"'{i}'" for i in items)
@@ -165,10 +250,9 @@ def run_query(conn, sql):
 
 def sql_ob_calls(start, end):
     dnis_list = _sql_list(DNIS_EXCLUSIONS)
-    agent_list = _sql_list([a[4] for a in AGENTS])
     return f"""
 SELECT
-    input_json:"AGENT NAME"::STRING AS agent,
+    {FIVE9_NID} AS nid,
     COUNT(*) AS ob_calls
 FROM PROD_LAKE.FIVE9_SAAS.FIVE9_CALL_DATA
 WHERE DATE(TRY_TO_TIMESTAMP(input_json:"TIMESTAMP"::STRING, 'DY, DD MON YYYY HH24:MI:SS'))
@@ -177,16 +261,16 @@ WHERE DATE(TRY_TO_TIMESTAMP(input_json:"TIMESTAMP"::STRING, 'DY, DD MON YYYY HH2
   AND input_json:"CAMPAIGN"::STRING LIKE 'DID - Resi OB%'
   AND input_json:"DNIS"::STRING NOT LIKE '599%'
   AND input_json:"DNIS"::STRING NOT IN ({dnis_list})
-  AND input_json:"AGENT NAME"::STRING IN ({agent_list})
+  AND {FIVE9_NID} IN ({_sql_list(ALL_NIDS)})
 GROUP BY 1
 """
 
 def sql_ib_calls(start, end):
-    clw_list = _sql_list(CLW_FIVE9)
-    cnx_list = _sql_list(CNX_FIVE9)
+    clw_list = _sql_list(CLW_NIDS)
+    cnx_list = _sql_list(CNX_NIDS)
     return f"""
 SELECT
-    input_json:"AGENT NAME"::STRING AS agent,
+    {FIVE9_NID} AS nid,
     COUNT(*) AS ib_calls
 FROM PROD_LAKE.FIVE9_SAAS.FIVE9_CALL_DATA
 WHERE DATE(TRY_TO_TIMESTAMP(input_json:"TIMESTAMP"::STRING, 'DY, DD MON YYYY HH24:MI:SS'))
@@ -195,15 +279,31 @@ WHERE DATE(TRY_TO_TIMESTAMP(input_json:"TIMESTAMP"::STRING, 'DY, DD MON YYYY HH2
   AND input_json:"HANDLE TIME"::STRING > '00:00:00'
   AND input_json:"PODS.Line of Business"::STRING != 'Service'
   AND (
-      (input_json:"AGENT NAME"::STRING IN ({clw_list})
+      ({FIVE9_NID} IN ({clw_list})
        AND (input_json:"CAMPAIGN"::STRING LIKE '%Local%'
             OR input_json:"CAMPAIGN"::STRING LIKE '% IF %'))
       OR
-      (input_json:"AGENT NAME"::STRING IN ({cnx_list})
+      ({FIVE9_NID} IN ({cnx_list})
        AND input_json:"CAMPAIGN"::STRING NOT LIKE '%Local%'
        AND input_json:"CAMPAIGN"::STRING NOT LIKE '% IF %')
   )
 GROUP BY 1
+"""
+
+def sql_agent_universe(end):
+    """Every nid seen in Five9 over the trailing 8 weeks.
+
+    Used to tell a stale roster entry apart from an agent who simply took no
+    calls this week. Both produce zero rows for the week; only the former is a
+    bug we must refuse to publish.
+    """
+    start = (date.fromisoformat(end) - timedelta(days=55)).isoformat()
+    return f"""
+SELECT DISTINCT {FIVE9_NID} AS nid
+FROM PROD_LAKE.FIVE9_SAAS.FIVE9_CALL_DATA
+WHERE DATE(TRY_TO_TIMESTAMP(input_json:"TIMESTAMP"::STRING, 'DY, DD MON YYYY HH24:MI:SS'))
+      BETWEEN '{start}' AND '{end}'
+  AND input_json:"AGENT EMAIL"::STRING IS NOT NULL
 """
 
 def sql_opps(start, end):
@@ -211,7 +311,10 @@ def sql_opps(start, end):
     return f"""
 SELECT
     o.input_json:"OwnerId"::STRING AS owner_id,
-    COUNT(*) AS opps
+    -- DISTINCT, not COUNT(*): OPPORTUNITY_JSON takes hourly incremental loads and
+    -- transiently holds duplicate rows per opportunity mid-load. Observed
+    -- 2026-08-10: the same agent read 62 then 16 minutes apart (~4x inflation).
+    COUNT(DISTINCT o.input_json:"Id"::STRING) AS opps
 FROM PROD_LAKE.SALESFORCE_SAAS.OPPORTUNITY_JSON o
 WHERE o.input_json:"IsDeleted"::STRING = 'false'
   AND DATE(CONVERT_TIMEZONE('UTC', 'America/New_York',
@@ -226,7 +329,8 @@ def sql_containers(start, end):
     return f"""
 SELECT
     "Agent Container Booked By" AS nid,
-    SUM("Gross Container Count") AS containers
+    SUM("Gross Container Count") AS containers,
+    COUNT(DISTINCT "Order Number") AS orders
 FROM PROD_DW.DW_SEMANTIC.ORDER_CONTAINER_SALES_FACT
 WHERE "Date Container Booked" BETWEEN '{start}' AND '{end}'
   AND "Super Segment" != 'Commercial'
@@ -262,6 +366,7 @@ def fetch_week_data(conn, monday, sunday):
         'opps':     sql_opps(start, end),
         'cont':     sql_containers(start, end),
         'cancel':   sql_cancel_7d(cancel_start, end),
+        'universe': sql_agent_universe(end),
     }
 
     results = {}
@@ -272,7 +377,7 @@ def fetch_week_data(conn, monday, sunday):
         cols = [c[0].lower() for c in cur.description]
         return key, [dict(zip(cols, row)) for row in cur.fetchall()]
 
-    print('  Running 5 queries in parallel...')
+    print(f'  Running {len(queries)} queries in parallel...')
     with ThreadPoolExecutor(max_workers=5) as ex:
         futures = {ex.submit(run, k, v): k for k, v in queries.items()}
         for f in as_completed(futures):
@@ -280,19 +385,27 @@ def fetch_week_data(conn, monday, sunday):
             results[key] = rows
             print(f'    ✓ {key} ({len(rows)} rows)')
 
-    # Build lookup dicts
-    ob_map     = {r['agent']: r['ob_calls'] for r in results['ob']}
-    ib_map     = {r['agent']: r['ib_calls'] for r in results['ib']}
+    # Build lookup dicts. Five9 maps are keyed on nid (agent email local-part),
+    # NOT display name — see the roster comment above.
+    ob_map     = {r['nid']: r['ob_calls'] for r in results['ob']}
+    ib_map     = {r['nid']: r['ib_calls'] for r in results['ib']}
     opps_map   = {r['owner_id']: r['opps'] for r in results['opps']}
     cont_map   = {r['nid']: r['containers'] for r in results['cont']}
+    orders_map = {r['nid']: r['orders'] for r in results['cont']}
     cancel_map = {r['nid']: r for r in results['cancel']}
 
     agents_out = []
+    skipped = []
     for dash_name, group, sf_id, nid, five9_name in AGENTS:
-        ob     = ob_map.get(five9_name)
-        ib     = ib_map.get(five9_name)
+        if not is_active(nid, monday):
+            skipped.append(dash_name)
+            continue
+        key    = nid.lower()
+        ob     = ob_map.get(key)
+        ib     = ib_map.get(key)
         opps   = opps_map.get(sf_id)
         cont   = cont_map.get(nid)
+        orders = orders_map.get(nid)
         c_row  = cancel_map.get(nid, {})
         c3     = c_row.get('containers_3wk') or 0
         c7d    = c_row.get('cancelled_7d') or 0
@@ -300,6 +413,7 @@ def fetch_week_data(conn, monday, sunday):
         total_calls    = (ob or 0) + (ib or 0)
         calls_per_opp  = round(total_calls / opps, 4) if opps else None
         conversion     = round(100 * (cont or 0) / opps, 2) if opps else None
+        close_rate     = round(100 * (orders or 0) / opps, 2) if opps else None
         cancel_7d      = round(100 * c7d / c3, 1) if c3 else None
 
         agents_out.append({
@@ -309,12 +423,59 @@ def fetch_week_data(conn, monday, sunday):
             'ob_calls':     int(ob)   if ob   is not None else None,
             'ib_calls':     int(ib)   if ib   is not None else None,
             'containers':   int(cont) if cont is not None else None,
+            'orders':       int(orders) if orders is not None else None,
             'calls_per_opp': calls_per_opp,
             'conversion':   conversion,
+            'close_rate':   close_rate,
             'cancel_7d':    cancel_7d,
         })
 
+    if skipped:
+        print(f'    Outside tenure this week ({len(skipped)}): ' + ', '.join(skipped))
+
+    known_nids = {r['nid'] for r in results['universe'] if r['nid']}
+    validate_week(agents_out, known_nids)
     return agents_out
+
+# ── Validation ─────────────────────────────────────────────────────────────────
+
+def validate_week(agents_out, known_nids):
+    """Fail loudly on a stale roster; warn on a merely quiet agent.
+
+    The original bug (three agents whose Five9 display name never matched the
+    roster) was invisible because a broken join and an idle agent both yield
+    None for the week. They ARE distinguishable over a longer window: a broken
+    join means the nid is absent from Five9 entirely, while an idle agent's nid
+    still shows up in recent weeks.
+
+    Judging on the week alone is too blunt — it would have blocked W84, where
+    May Anthonette Clavel legitimately took no calls but still held 62 opps.
+    """
+    nid_of = {a[0]: a[3] for a in AGENTS}   # dashboard_name → network_id
+    stale = [f"{a['name']} (nid: {nid_of[a['name']]})" for a in agents_out
+             if nid_of[a['name']].lower() not in known_nids and (a['opps'] or 0) > 0]
+    if stale:
+        sys.exit(
+            'ERROR: roster nid(s) absent from Five9 for 8 weeks, but still\n'
+            'holding Salesforce pipeline:\n'
+            + '\n'.join(f'  - {s}' for s in stale)
+            + '\n\nThe agent\'s Five9 "AGENT EMAIL" local-part has probably changed.\n'
+              'Fix network_id in the roster and re-run. Refusing to publish a\n'
+              'week with dropped calls.'
+        )
+
+    quiet = [a['name'] for a in agents_out
+             if not a['ob_calls'] and (a['opps'] or 0) > 0]
+    for n in quiet:
+        print(f'    ! {n}: has opps but no calls this week (PTO/leave?) — verify')
+
+    absent = [a['name'] for a in agents_out
+              if not a['opps'] and not a['ob_calls'] and not a['containers']]
+    if absent:
+        print('    ! No data at all (departed or inactive?): ' + ', '.join(absent))
+
+    active = [a for a in agents_out if a['ob_calls']]
+    print(f'    Validation OK — {len(active)}/{len(agents_out)} agents with calls')
 
 # ── GitHub helpers ─────────────────────────────────────────────────────────────
 
@@ -350,6 +511,17 @@ def update_js(js, week_key, week_data):
     if not m:
         raise ValueError("Could not find 'const D={...}' in ob_data.js")
     existing = json.loads(m.group(2))
+
+    # Week keys are sequential (max+1), so a second run in the same calendar week
+    # would append a duplicate under a new number. Key off the date label instead.
+    dupe = next((k for k, v in existing.items()
+                 if v.get('date') == week_data['date']), None)
+    if dupe:
+        sys.exit(f"ERROR: {dupe} already covers {week_data['date']}. "
+                 f"Refusing to write a duplicate week as {week_key}.\n"
+                 f"       Weeks are frozen snapshots — to replace one, delete "
+                 f"{dupe} from ob_data.js first.")
+
     existing[week_key] = week_data
     new_json = json.dumps(existing, separators=(',', ':'))
     return DATA_PAT.sub(lambda x: f'{x.group(1)}{new_json}{x.group(3)}', js)
