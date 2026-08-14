@@ -197,11 +197,6 @@ document.getElementById('kpi-minis').innerHTML = `
       <div class="win-body">An <strong>${cancelAbs} percentage point</strong> reduction in 30-day cancel rate on orders with labor booked, measured against the same agent's orders without labor. ${wowText}</div>
     </div>
     <div class="proj-card">
-      <div class="proj-label">Annualized — Current Pilot (${IL_DATA.active_agents} active agents)</div>
-      <div class="proj-val">$${IL_DATA.annualized_savings.toLocaleString()}</div>
-      <div class="proj-sub">Monthly savings × 12 at current run rate</div>
-    </div>
-    <div class="proj-card">
       <div class="proj-label">Projected Full Rollout (~${IL_DATA.projected_rollout_agents} agents)</div>
       <div class="proj-val">${IL_DATA.projected_rollout_savings}</div>
       <div class="proj-sub">Avg savings/active agent × ${IL_DATA.projected_rollout_agents} × 12</div>
@@ -212,8 +207,7 @@ document.getElementById('kpi-minis').innerHTML = `
 document.getElementById('cancel-stats').innerHTML = `
   <div class="net-stat"><div class="net-stat-label">7-Day Delta</div><div class="net-stat-val">${IL_DATA.cancel_delta_7d < 0 ? '−' : '+'}${Math.abs(IL_DATA.cancel_delta_7d)}pp</div></div>
   <div class="net-stat"><div class="net-stat-label">30-Day Delta</div><div class="net-stat-val">${IL_DATA.cancel_delta_30d < 0 ? '−' : '+'}${Math.abs(IL_DATA.cancel_delta_30d)}pp</div></div>
-  <div class="net-stat"><div class="net-stat-label">Cumulative Net Savings</div><div class="net-stat-val">$${IL_DATA.cancel_savings.toLocaleString()}</div></div>
-  <div class="net-stat"><div class="net-stat-label">Annualized (${IL_DATA.active_agents} active)</div><div class="net-stat-val">$${IL_DATA.annualized_savings.toLocaleString()}</div></div>`;
+  <div class="net-stat"><div class="net-stat-label">Cumulative Net Savings</div><div class="net-stat-val">$${IL_DATA.cancel_savings.toLocaleString()}</div></div>`;
 
 // ── Top performers ───────────────────────────────────────────────────────────
 (function() {
