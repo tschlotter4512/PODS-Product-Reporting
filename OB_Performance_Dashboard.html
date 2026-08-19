@@ -21,6 +21,10 @@ header span{font-size:12px;opacity:.7}
 .filter-group{display:flex;gap:4px}
 .filter-btn{padding:4px 12px;border:1px solid var(--border);background:var(--surface);border-radius:4px;cursor:pointer;font-size:12px;color:var(--muted)}
 .filter-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.export-btn{padding:6px 14px;border:1px solid #15803d;background:#15803d;color:#fff;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;margin-left:auto}
+.export-btn:hover:not(:disabled){background:#126c34;border-color:#126c34}
+.export-btn:disabled{opacity:.6;cursor:default}
+.export-note{font-size:10px;color:var(--muted);margin-left:8px}
 .week-tabs{display:flex;gap:4px;flex-wrap:wrap}
 .week-btn{padding:5px 12px;border:2px solid var(--border);background:var(--surface);border-radius:5px;cursor:pointer;font-size:11px;color:var(--muted);font-weight:500;transition:all .15s}
 .week-btn:hover:not(.active){border-color:#94a3b8;color:#374151}
@@ -150,6 +154,8 @@ canvas{display:block;width:100%;cursor:crosshair}
       <span class="ctrl-label">Week</span>
       <div id="week-selector" class="week-tabs"></div>
     </div>
+    <button class="export-btn" id="export-btn">Export to Excel (All Weeks)</button>
+    <span class="export-note" id="export-note"></span>
   </div>
   <div class="tbl-wrap">
     <table><thead id="agent-thead"></thead><tbody id="agent-tbody"></tbody></table>
@@ -458,6 +464,224 @@ document.querySelectorAll('[data-grp]').forEach(b=>b.onclick=()=>{
   b.classList.add('active');GF=b.dataset.grp;bat();
 });
 window.addEventListener('resize',()=>{if(document.getElementById('summary-page').classList.contains('active'))bsc();});
+
+/* ── Excel export: old "Weekly Agent Tracker" layout, always ALL weeks ──
+   Agents as rows; 7 metric blocks side by side; weeks as columns inside each block.
+   Each block ends with an AVG L4 column, then a blank spacer column.
+   Below the agents: 2 blank rows, Total (counts only), blank row,
+   then CLW / CNX / Both Average — matching OB Agent Weekly Tracker.
+   Counts average per agent (AVERAGEIF); Conversion and Cancel are weighted by
+   containers (SUMPRODUCT); Calls Per Oppty is derived from the row's own cells.
+   Ignores the on-screen week/group filters by design. */
+const EXCELJS_CDN='https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js';
+const XBLOCKS=[
+  {key:'opps',        label:'Opportunities',       fmt:'#,##0', avgFmt:'#,##0.0', kind:'count'},
+  {key:'ob_calls',    label:'OB Calls',            fmt:'#,##0', avgFmt:'#,##0.0', kind:'count'},
+  {key:'ib_calls',    label:'IB Calls',            fmt:'#,##0', avgFmt:'#,##0.0', kind:'count'},
+  {key:'containers',  label:'Containers',          fmt:'#,##0', avgFmt:'#,##0.0', kind:'count'},
+  {key:'calls_per_opp',label:'Calls Per Oppty',    fmt:'0.00',  kind:'cpo'},
+  {key:'conversion',  label:'Container Conversion',fmt:'0.0%',  kind:'conv',  pct:true},
+  {key:'cancel_7d',   label:'Container Cancel',    fmt:'0.0%',  kind:'cancel',pct:true},
+];
+const colL=n=>{let s='';while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}return s;};
+const rngA=(c1,r1,c2,r2)=>colL(c1)+r1+':'+colL(c2)+r2;
+function loadExcelJS(){
+  return new Promise((res,rej)=>{
+    if(window.ExcelJS)return res();
+    const s=document.createElement('script');
+    s.src=EXCELJS_CDN;
+    s.onload=()=>window.ExcelJS?res():rej(new Error('Excel library loaded but did not initialise.'));
+    s.onerror=()=>rej(new Error('Could not load the Excel library (no internet, or the CDN is blocked).'));
+    document.head.appendChild(s);
+  });
+}
+async function buildTrackerWorkbook(){
+  await loadExcelJS();
+  const wks=ALL_WKS,NW=wks.length,NB=XBLOCKS.length;
+  const L4=Math.min(4,NW), L4WKS=wks.slice(-L4);
+  const SEC=bi=>3+bi*(NW+2);      // first week column of block bi
+  const L4C=bi=>SEC(bi)+NW;       // its AVG L4 column
+  const lastCol=L4C(NB-1);
+  const CT=3;                      // index of the Containers block (weighting basis)
+
+  // Roster = every agent seen in any week (latest group wins), grouped then alphabetical
+  const roster={};
+  wks.forEach(w=>D[w].agents.forEach(a=>{roster[a.name]={name:a.name,group:a.group};}));
+  const agents=Object.values(roster).sort((x,y)=>
+    x.group===y.group?fn(x.name).localeCompare(fn(y.name)):x.group.localeCompare(y.group));
+  const byWk={};wks.forEach(w=>{const m={};D[w].agents.forEach(a=>{m[a.name]=a;});byWk[w]=m;});
+  const NA=agents.length, R0=3, R1=2+NA;
+  const TOTALR=R1+3, CLWR=R1+5, CNXR=R1+6, BOTHR=R1+7;   // 2 blanks, Total, blank, 3 avgs
+  const AC='$A$'+R0+':$A$'+R1;
+
+  // ── cached-value helpers (so the sheet displays before Excel recalcs) ──
+  const raw=(n,w,k)=>{const r=byWk[w][n];const v=r?r[k]:null;return v==null?null:v;};
+  const sumOf=(ns,ws_,k)=>{let s=0;ns.forEach(n=>ws_.forEach(w=>{const v=raw(n,w,k);if(v!=null)s+=v;}));return s;};
+  const meanOf=(ns,ws_,k)=>{let s=0,c=0;ns.forEach(n=>ws_.forEach(w=>{const v=raw(n,w,k);if(v!=null){s+=v;c++;}}));return c?s/c:null;};
+  const cpoOf=(ns,ws_)=>{const o=sumOf(ns,ws_,'opps');return o?(sumOf(ns,ws_,'ob_calls')+sumOf(ns,ws_,'ib_calls'))/o:null;};
+  const convOf=(ns,ws_)=>{const o=sumOf(ns,ws_,'opps');return o?sumOf(ns,ws_,'containers')/o:null;};
+  // container-weighted mean of a per-agent percentage metric (matches Frank's SUMPRODUCT rows)
+  const wtRate=(ns,ws_,k)=>{let nu=0,de=0;
+    ns.forEach(n=>ws_.forEach(w=>{const v=raw(n,w,k),t=raw(n,w,'containers');
+      if(v!=null&&t){nu+=v*t;de+=t;}}));
+    return de?nu/de/100:null;};
+
+  // per-agent AVG L4 values, reused by the summary rows' AVG L4 cells
+  const aL4={};
+  agents.forEach(a=>{const n=a.name,one=[n];
+    aL4[n]={opps:meanOf(one,L4WKS,'opps'),ob_calls:meanOf(one,L4WKS,'ob_calls'),
+      ib_calls:meanOf(one,L4WKS,'ib_calls'),containers:meanOf(one,L4WKS,'containers'),
+      calls_per_opp:cpoOf(one,L4WKS),conversion:convOf(one,L4WKS),cancel_7d:wtRate(one,L4WKS,'cancel_7d')};});
+  const l4Mean=(gn,k)=>{let s=0,c=0;gn.forEach(n=>{const v=aL4[n][k];if(v!=null){s+=v;c++;}});return c?s/c:null;};
+  const l4Sum =(gn,k)=>{let s=0;gn.forEach(n=>{const v=aL4[n][k];if(v!=null)s+=v;});return s;};
+  const l4Cpo =gn=>{const o=l4Sum(gn,'opps');return o?(l4Sum(gn,'ob_calls')+l4Sum(gn,'ib_calls'))/o:null;};
+  const l4Wt  =(gn,k)=>{let nu=0,de=0;gn.forEach(n=>{const v=aL4[n][k],t=aL4[n].containers;
+    if(v!=null&&t){nu+=v*t;de+=t;}});return de?nu/de:null;};
+
+  const wb=new ExcelJS.Workbook();
+  wb.creator='OB Performance Dashboard';wb.created=new Date();
+  const ws=wb.addWorksheet('Weekly Agent Tracker',{views:[{state:'frozen',xSplit:2,ySplit:2}]});
+
+  const NAVY='FF1C3557',SLATE='FFF8FAFC',L4FILL='FFEAF1F8',SUMFILL='FFF1F5F9',TOTFILL='FFE2E8F0';
+  const THIN={style:'thin',color:{argb:'FFD1D5DB'}};
+  const hdr=(r,c,text,fill)=>{
+    const cell=ws.getCell(r,c);cell.value=text;
+    cell.font={bold:true,color:{argb:fill===NAVY?'FFFFFFFF':'FF374151'},size:11};
+    cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:fill}};
+    cell.alignment={horizontal:'center',vertical:'middle',wrapText:true};
+    cell.border={top:THIN,bottom:THIN,left:THIN,right:THIN};
+    return cell;
+  };
+
+  // ── Header rows ──
+  ws.mergeCells(1,1,2,1);hdr(1,1,'Business Unit',NAVY);
+  ws.mergeCells(1,2,2,2);hdr(1,2,'Agent',NAVY);
+  XBLOCKS.forEach((b,bi)=>{
+    ws.mergeCells(1,SEC(bi),1,L4C(bi));
+    hdr(1,SEC(bi),b.label,NAVY);
+    wks.forEach((w,i)=>hdr(2,SEC(bi)+i,'W'+D[w].num+'\n'+D[w].date,SLATE));
+    hdr(2,L4C(bi),'AVG L4',L4FILL);
+  });
+
+  // ── Agent rows ──
+  agents.forEach((ag,ai)=>{
+    const r=R0+ai;
+    const c1=ws.getCell(r,1);c1.value=ag.group;c1.alignment={horizontal:'center'};
+    const c2=ws.getCell(r,2);c2.value=fn(ag.name);
+    [c1,c2].forEach(c=>{c.font={bold:true,size:11};});
+
+    XBLOCKS.forEach((b,bi)=>{
+      wks.forEach((w,i)=>{
+        const cell=ws.getCell(r,SEC(bi)+i);
+        const rec=byWk[w][ag.name], v=rec?rec[b.key]:null;
+        const oppA=colL(SEC(0)+i)+r, obA=colL(SEC(1)+i)+r,
+              ibA =colL(SEC(2)+i)+r, ctA=colL(SEC(3)+i)+r;
+        if(b.kind==='cpo'&&rec)      cell.value={formula:`IFERROR((${obA}+${ibA})/${oppA},"")`,result:v==null?'':v};
+        else if(b.kind==='conv'&&rec)cell.value={formula:`IFERROR(${ctA}/${oppA},"")`,result:v==null?'':v/100};
+        else if(v!=null)             cell.value=b.pct?v/100:v;
+        cell.numFmt=b.fmt;cell.alignment={horizontal:'center'};
+        if(i===0)cell.border={left:{style:'medium',color:{argb:'FF9CA3AF'}}};
+      });
+      // AVG L4 — weighted across the last 4 weeks for rate blocks
+      const cell=ws.getCell(r,L4C(bi));
+      const s=NW-L4;
+      const oR=rngA(SEC(0)+s,r,SEC(0)+NW-1,r), bR=rngA(SEC(1)+s,r,SEC(1)+NW-1,r),
+            iR=rngA(SEC(2)+s,r,SEC(2)+NW-1,r), tR=rngA(SEC(CT)+s,r,SEC(CT)+NW-1,r),
+            sR=rngA(SEC(bi)+s,r,SEC(bi)+NW-1,r);
+      let f,res;const v4=aL4[ag.name];
+      if(b.kind==='count'){      f=`IFERROR(AVERAGE(${sR}),"")`;                     res=v4[b.key]; }
+      else if(b.kind==='cpo'){   f=`IFERROR((SUM(${bR})+SUM(${iR}))/SUM(${oR}),"")`; res=v4.calls_per_opp; }
+      else if(b.kind==='conv'){  f=`IFERROR(SUM(${tR})/SUM(${oR}),"")`;              res=v4.conversion; }
+      else {                     f=`IFERROR(SUMPRODUCT(${sR},${tR})/SUM(${tR}),"")`; res=v4.cancel_7d; }
+      cell.value={formula:f,result:res==null?'':res};
+      cell.numFmt=b.avgFmt||b.fmt;cell.alignment={horizontal:'center'};
+      cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:L4FILL}};
+      cell.font={bold:true,size:11};
+    });
+  });
+
+  // ── Total row + CLW / CNX / Both Average rows ──
+  const SUMDEFS=[
+    {row:TOTALR,code:null,   label:'Total',        kind:'sum',  fill:TOTFILL},
+    {row:CLWR,  code:'CLW',  label:'CLW Average',  kind:'avg',  fill:SUMFILL},
+    {row:CNXR,  code:'CNX',  label:'CNX Average',  kind:'avg',  fill:SUMFILL},
+    {row:BOTHR, code:null,   label:'Both Average', kind:'avg',  fill:SUMFILL},
+  ];
+  SUMDEFS.forEach(def=>{
+    const r=def.row, gn=agents.filter(a=>!def.code||a.group===def.code).map(a=>a.name);
+    const ca=ws.getCell(r,1);ca.value=def.code||'';ca.alignment={horizontal:'center'};
+    const cb=ws.getCell(r,2);cb.value=def.label;
+    [ca,cb].forEach(c=>{c.font={bold:true,size:11};
+      c.fill={type:'pattern',pattern:'solid',fgColor:{argb:def.fill}};c.border={top:THIN,bottom:THIN};});
+
+    XBLOCKS.forEach((b,bi)=>{
+      const put=(col,f,res,fmt)=>{
+        const cell=ws.getCell(r,col);
+        if(f)cell.value={formula:f,result:res==null?'':res};
+        cell.numFmt=fmt;cell.alignment={horizontal:'center'};
+        cell.font={bold:true,size:11};
+        cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:def.fill}};
+        cell.border={top:THIN,bottom:THIN};
+      };
+      const cols=wks.map((w,i)=>({c:SEC(bi)+i,ct:SEC(CT)+i,op:SEC(0)+i,ob:SEC(1)+i,ib:SEC(2)+i,wk:[w]}))
+                    .concat([{c:L4C(bi),ct:L4C(CT),op:L4C(0),ob:L4C(1),ib:L4C(2),wk:null}]);
+      cols.forEach(spec=>{
+        const isL4=spec.wk===null, fmt=isL4?(b.avgFmt||b.fmt):b.fmt;
+        const sR=rngA(spec.c,R0,spec.c,R1), tR=rngA(spec.ct,R0,spec.ct,R1);
+        const sC=colL(spec.c), tC=colL(spec.ct);
+        let f=null,res=null;
+        if(def.kind==='sum'){
+          // Total row: counts only, rates left blank (matches the reference file)
+          if(b.kind==='count'){f=`IFERROR(SUM(${sR}),"")`;res=isL4?l4Sum(gn,b.key):sumOf(gn,spec.wk,b.key);}
+        }else if(b.kind==='count'){
+          f=def.code?`IFERROR(AVERAGEIF(${AC},$A${r},${sC}$${R0}:${sC}$${R1}),"")`
+                    :`IFERROR(AVERAGE(${sR}),"")`;
+          res=isL4?l4Mean(gn,b.key):meanOf(gn,spec.wk,b.key);
+        }else if(b.kind==='cpo'){
+          // derived from this row's own OB / IB / Opps cells, as in the reference file
+          f=`IFERROR((${colL(spec.ob)}${r}+${colL(spec.ib)}${r})/${colL(spec.op)}${r},"")`;
+          res=isL4?l4Cpo(gn):cpoOf(gn,spec.wk);
+        }else{
+          // Conversion & Cancel: container-weighted across agents
+          f=def.code?`IFERROR(SUMPRODUCT(--(${AC}=$A${r}),${sR},${tR})/SUMIF(${AC},$A${r},${tR}),"")`
+                    :`IFERROR(SUMPRODUCT(${sR},${tR})/SUM(${tR}),"")`;
+          res=isL4?l4Wt(gn,b.key):wtRate(gn,spec.wk,b.key);
+        }
+        put(spec.c,f,res,fmt);
+      });
+    });
+  });
+
+  // ── Sizing ──
+  ws.getRow(1).height=20;ws.getRow(2).height=28;
+  [R1+1,R1+2,R1+4].forEach(r=>{ws.getRow(r).height=8;});
+  ws.getColumn(1).width=14;ws.getColumn(2).width=24;
+  for(let c=3;c<=lastCol;c++)ws.getColumn(c).width=10;
+  XBLOCKS.forEach((b,bi)=>{if(bi<NB-1)ws.getColumn(SEC(bi)+NW+1).width=2.5;});
+
+  return{wb,ws,agents,weeks:wks,lastCol,rows:{first:R0,last:R1,total:TOTALR,clw:CLWR,cnx:CNXR,both:BOTHR}};
+}
+async function exportAllWeeks(){
+  const btn=document.getElementById('export-btn'),note=document.getElementById('export-note');
+  const orig=btn.textContent;
+  btn.disabled=true;btn.textContent='Building…';note.textContent='';
+  try{
+    const built=await buildTrackerWorkbook();
+    const d=new Date(),pad=n=>String(n).padStart(2,'0');
+    const fname=`OB_Agent_Weekly_Tracker_AllWeeks_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.xlsx`;
+    const buf=await built.wb.xlsx.writeBuffer();
+    const url=URL.createObjectURL(new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
+    const a=document.createElement('a');a.href=url;a.download=fname;document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},0);
+    note.textContent=`${built.agents.length} agents × ${built.weeks.length} weeks exported`;
+  }catch(err){
+    note.textContent='Export failed: '+err.message;
+    console.error(err);
+  }finally{
+    btn.disabled=false;btn.textContent=orig;
+  }
+}
+document.getElementById('export-btn').onclick=exportAllWeeks;
 
 wbs('sum-week-selector', AGENT_WKS, ()=>buildSummary());
 wbs('week-selector', AGENT_WKS, ()=>bat());
