@@ -5,9 +5,9 @@ const IL_DATA = {
   updated_date: "August 30, 2026",
 
   // Program totals (cumulative since launch May 1, 2026)
-  total_quotes:  1398,
-  total_orders:  457,
-  conv_rate:     32.7,
+  total_quotes:  1782,
+  total_orders:  444,
+  conv_rate:     24.9,
 
   // Cancel rate impact
   cancel_delta_7d:  -4.7,
@@ -89,10 +89,10 @@ const IL_DATA = {
   "labor_containers": 532,
   "labor_cancelled": 33,
   "labor_cr": 6.2,
-  "regular_containers": 16921,
-  "regular_cancelled": 1966,
+  "regular_containers": 16678,
+  "regular_cancelled": 1940,
   "regular_cr": 11.6,
-  "agents": 50,
+  "agents": 49,
   "cutoff": "2026-08-23",
   "covers_from": "May 1",
   "covers_to": "Aug 23"
@@ -102,10 +102,10 @@ const IL_DATA = {
   "labor_containers": 385,
   "labor_cancelled": 58,
   "labor_cr": 15.1,
-  "regular_containers": 8235,
-  "regular_cancelled": 1798,
+  "regular_containers": 7607,
+  "regular_cancelled": 1657,
   "regular_cr": 21.8,
-  "agents": 34,
+  "agents": 32,
   "cutoff": "2026-07-31",
   "covers_from": "May 1",
   "covers_to": "Jul 31"
@@ -129,8 +129,8 @@ const IL_DATA = {
   labor_attach_detail: {
   "labor_orders": 403,
   "labor_containers": 563,
-  "total_orders": 34525,
-  "agents": 51,
+  "total_orders": 34529,
+  "agents": 50,
   "roster": 129,
   "from": "May 1",
   "to": "Aug 30"
@@ -141,15 +141,15 @@ const IL_DATA = {
   total_agents:  129,
 
   // Prior week values (for trajectory narrative)
-  prev_orders:  436,
-  prev_quotes:  1306,
-  prev_savings: 94805,
+  prev_orders:  457,
+  prev_quotes:  1398,
+  prev_savings: 105413,
 
   // Department breakdown
   depts: {
-    Sales: { total: 66, active: 34, orders: 240, quotes: 669, pitch_rate: 3.1, conv_rate: 35.9 },
-    SST:   { total: 18,   active: 16,   orders: 139,   quotes: 402,   pitch_rate: 9.7,   conv_rate: 34.6   },
-    OB:    { total: 43,    active: 18,    orders: 38,    quotes: 224,    pitch_rate: 2.6,    conv_rate: 17.0    },
+    Sales: { total: 66, active: 34, orders: 239, quotes: 791, pitch_rate: 3.6, conv_rate: 30.2 },
+    SST:   { total: 18,   active: 16,   orders: 145,   quotes: 556,   pitch_rate: 13.4,   conv_rate: 26.1   },
+    OB:    { total: 43,    active: 18,    orders: 41,    quotes: 280,    pitch_rate: 3.3,    conv_rate: 14.6    },
   },
 
   // Silent agent breakdown by location + dept
@@ -196,7 +196,7 @@ const IL_DATA = {
   weekly_trends: [
   {
     "week": "7/6-7/12",
-    "quotes": 18,
+    "quotes": 93,
     "orders": 30
   },
   {
@@ -710,15 +710,15 @@ const IL_DATA = {
     "desc": "25 of 43 silent",
     "silent": 25,
     "est_containers": "6,257",
-    "est_missed": "176",
+    "est_missed": "175",
     "priority": "Critical"
   },
   {
     "dept": "Sales",
     "desc": "32 of 66 silent",
     "silent": 32,
-    "est_containers": "11,285",
-    "est_missed": "318",
+    "est_containers": "11,289",
+    "est_missed": "317",
     "priority": "High"
   },
   {
@@ -734,66 +734,73 @@ const IL_DATA = {
   // Agent roster (cumulative since launch)
   agents: [
   {
-    "name": "Catherine Saitta",
-    "dept": "Sales",
-    "loc": "CLW",
-    "quoted": 56,
-    "booked": 49
-  },
-  {
     "name": "Amy Sisterman",
     "dept": "Sales",
     "loc": "CLW",
-    "quoted": 100,
-    "booked": 47
+    "quoted": 161,
+    "booked": 49
+  },
+  {
+    "name": "Catherine Saitta",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 77,
+    "booked": 49
   },
   {
     "name": "Jeanielle Navarro",
     "dept": "SST",
     "loc": "CNX",
-    "quoted": 75,
-    "booked": 31
-  },
-  {
-    "name": "HaH Agent",
-    "dept": "HaH",
-    "loc": "\u2014",
-    "quoted": 80,
+    "quoted": 105,
     "booked": 30
   },
   {
     "name": "Johnny Cardinale",
     "dept": "SST",
     "loc": "CLW",
-    "quoted": 58,
-    "booked": 22
+    "quoted": 93,
+    "booked": 23
   },
   {
     "name": "Sara Messenger",
     "dept": "SST",
     "loc": "CLW",
-    "quoted": 49,
+    "quoted": 63,
     "booked": 22
-  },
-  {
-    "name": "Kimberly Thebeau",
-    "dept": "Sales",
-    "loc": "CLW",
-    "quoted": 57,
-    "booked": 14
-  },
-  {
-    "name": "Carmie Nillama",
-    "dept": "SST",
-    "loc": "CNX",
-    "quoted": 50,
-    "booked": 14
   },
   {
     "name": "Gregory D. Bell",
     "dept": "Sales",
     "loc": "CLW",
-    "quoted": 61,
+    "quoted": 80,
+    "booked": 16
+  },
+  {
+    "name": "Kimberly Thebeau",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 70,
+    "booked": 15
+  },
+  {
+    "name": "Carmie Nillama",
+    "dept": "SST",
+    "loc": "CNX",
+    "quoted": 59,
+    "booked": 14
+  },
+  {
+    "name": "Felicia Knight",
+    "dept": "SST",
+    "loc": "CLW",
+    "quoted": 49,
+    "booked": 13
+  },
+  {
+    "name": "James Onnagan",
+    "dept": "SST",
+    "loc": "CNX",
+    "quoted": 30,
     "booked": 13
   },
   {
@@ -804,32 +811,18 @@ const IL_DATA = {
     "booked": 13
   },
   {
-    "name": "Ted Johnson",
-    "dept": "Sales",
-    "loc": "CLW",
-    "quoted": 29,
-    "booked": 11
-  },
-  {
-    "name": "Felicia Knight",
-    "dept": "SST",
-    "loc": "CLW",
-    "quoted": 28,
-    "booked": 11
-  },
-  {
-    "name": "James Onnagan",
-    "dept": "SST",
-    "loc": "CNX",
-    "quoted": 19,
-    "booked": 11
-  },
-  {
     "name": "Charmaine Bacay",
     "dept": "OB",
     "loc": "CNX",
-    "quoted": 69,
-    "booked": 10
+    "quoted": 92,
+    "booked": 12
+  },
+  {
+    "name": "Ted Johnson",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 30,
+    "booked": 11
   },
   {
     "name": "Valerie Mabe",
@@ -842,15 +835,29 @@ const IL_DATA = {
     "name": "Christina Morales",
     "dept": "OB",
     "loc": "CLW",
-    "quoted": 25,
+    "quoted": 32,
     "booked": 10
   },
   {
     "name": "Princess Heidi Sesma",
     "dept": "Service",
     "loc": "CNX",
-    "quoted": 21,
+    "quoted": 31,
     "booked": 10
+  },
+  {
+    "name": "HaH Agent",
+    "dept": "HaH",
+    "loc": "\u2014",
+    "quoted": 122,
+    "booked": 9
+  },
+  {
+    "name": "Mica Mae Maniego",
+    "dept": "SST",
+    "loc": "CNX",
+    "quoted": 33,
+    "booked": 9
   },
   {
     "name": "Wendy Horowitz",
@@ -860,52 +867,52 @@ const IL_DATA = {
     "booked": 9
   },
   {
-    "name": "Mica Mae Maniego",
-    "dept": "SST",
+    "name": "Stephen Hardwick",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 19,
+    "booked": 7
+  },
+  {
+    "name": "Katleen May Castro",
+    "dept": "Sales",
     "loc": "CNX",
-    "quoted": 25,
-    "booked": 8
+    "quoted": 49,
+    "booked": 6
   },
   {
     "name": "Amy Ashmore",
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 21,
-    "booked": 8
+    "booked": 6
   },
   {
-    "name": "Stephen Hardwick",
+    "name": "Nicole Slater",
     "dept": "Sales",
     "loc": "CLW",
-    "quoted": 19,
-    "booked": 8
+    "quoted": 20,
+    "booked": 6
+  },
+  {
+    "name": "Donald Alfaro",
+    "dept": "SST",
+    "loc": "CLW",
+    "quoted": 32,
+    "booked": 5
   },
   {
     "name": "Donavan O. Mitchell",
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 22,
-    "booked": 6
-  },
-  {
-    "name": "Katleen May Castro",
-    "dept": "Sales",
-    "loc": "CNX",
-    "quoted": 43,
     "booked": 5
   },
   {
-    "name": "Donald Alfaro",
+    "name": "Almira Castro",
     "dept": "SST",
-    "loc": "CLW",
-    "quoted": 22,
-    "booked": 5
-  },
-  {
-    "name": "Nicole Slater",
-    "dept": "Sales",
-    "loc": "CLW",
-    "quoted": 19,
+    "loc": "CNX",
+    "quoted": 20,
     "booked": 5
   },
   {
@@ -923,45 +930,24 @@ const IL_DATA = {
     "booked": 5
   },
   {
-    "name": "Arlene Wethern",
-    "dept": "Sales",
-    "loc": "CLW",
-    "quoted": 15,
-    "booked": 5
-  },
-  {
-    "name": "Heidi Gathen",
-    "dept": "Sales",
-    "loc": "CLW",
-    "quoted": 15,
-    "booked": 5
-  },
-  {
-    "name": "Almira Castro",
+    "name": "Micah Joy Abrao",
     "dept": "SST",
     "loc": "CNX",
-    "quoted": 14,
+    "quoted": 16,
     "booked": 5
-  },
-  {
-    "name": "Christopher Carlesimo",
-    "dept": "Sales",
-    "loc": "CLW",
-    "quoted": 19,
-    "booked": 4
   },
   {
     "name": "Christopher Monaldi",
     "dept": "OB",
     "loc": "CLW",
-    "quoted": 18,
+    "quoted": 23,
     "booked": 4
   },
   {
-    "name": "Micah Joy Abrao",
-    "dept": "SST",
-    "loc": "CNX",
-    "quoted": 14,
+    "name": "Arlene Wethern",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 15,
     "booked": 4
   },
   {
@@ -975,28 +961,35 @@ const IL_DATA = {
     "name": "Jessa Rey Belontindos",
     "dept": "OB",
     "loc": "CNX",
-    "quoted": 51,
+    "quoted": 62,
     "booked": 3
   },
   {
     "name": "Maria Concepcion Cauguiran",
     "dept": "SST",
     "loc": "CNX",
-    "quoted": 24,
+    "quoted": 26,
+    "booked": 3
+  },
+  {
+    "name": "Christopher Carlesimo",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 19,
     "booked": 3
   },
   {
     "name": "Jake Russel Bernardino",
     "dept": "OB",
     "loc": "CNX",
-    "quoted": 15,
+    "quoted": 17,
     "booked": 3
   },
   {
     "name": "Carmie Ann Gorospe",
     "dept": "SST",
     "loc": "CNX",
-    "quoted": 10,
+    "quoted": 14,
     "booked": 3
   },
   {
@@ -1010,21 +1003,28 @@ const IL_DATA = {
     "name": "Erik Goldring",
     "dept": "OB",
     "loc": "CLW",
-    "quoted": 5,
+    "quoted": 7,
     "booked": 3
+  },
+  {
+    "name": "Heidi Gathen",
+    "dept": "Sales",
+    "loc": "CLW",
+    "quoted": 15,
+    "booked": 2
   },
   {
     "name": "Ednalyn Mirandilla",
     "dept": "OB",
     "loc": "CNX",
-    "quoted": 7,
+    "quoted": 10,
     "booked": 2
   },
   {
     "name": "Dawn Carreiro",
     "dept": "OB",
     "loc": "CLW",
-    "quoted": 4,
+    "quoted": 6,
     "booked": 2
   },
   {
@@ -1042,15 +1042,15 @@ const IL_DATA = {
     "booked": 1
   },
   {
-    "name": "Alfred Thornton",
-    "dept": "Sales",
+    "name": "Dale Besida",
+    "dept": "OB",
     "loc": "CLW",
-    "quoted": 7,
+    "quoted": 8,
     "booked": 1
   },
   {
-    "name": "Dale Besida",
-    "dept": "OB",
+    "name": "Alfred Thornton",
+    "dept": "Sales",
     "loc": "CLW",
     "quoted": 7,
     "booked": 1
@@ -1074,6 +1074,13 @@ const IL_DATA = {
     "dept": "Sales",
     "loc": "CLW",
     "quoted": 4,
+    "booked": 1
+  },
+  {
+    "name": "Aldwin Navarro",
+    "dept": "OB",
+    "loc": "CNX",
+    "quoted": 3,
     "booked": 1
   },
   {
@@ -1105,6 +1112,13 @@ const IL_DATA = {
     "booked": 1
   },
   {
+    "name": "Viviane Peux",
+    "dept": "SST",
+    "loc": "CLW",
+    "quoted": 7,
+    "booked": 0
+  },
+  {
     "name": "Kimberly Hewitt",
     "dept": "OB",
     "loc": "CLW",
@@ -1115,13 +1129,6 @@ const IL_DATA = {
     "name": "Marijoh Mae Lee",
     "dept": "OB",
     "loc": "CNX",
-    "quoted": 5,
-    "booked": 0
-  },
-  {
-    "name": "Viviane Peux",
-    "dept": "SST",
-    "loc": "CLW",
     "quoted": 5,
     "booked": 0
   },
@@ -1137,13 +1144,6 @@ const IL_DATA = {
     "dept": "SST",
     "loc": "CNX",
     "quoted": 4,
-    "booked": 0
-  },
-  {
-    "name": "Aldwin Navarro",
-    "dept": "OB",
-    "loc": "CNX",
-    "quoted": 3,
     "booked": 0
   },
   {
