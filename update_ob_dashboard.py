@@ -222,9 +222,12 @@ def last_week_range():
 def date_label(monday, sunday):
     return f"{monday.month}/{monday.day}–{sunday.month}/{sunday.day}"
 
-def next_week_num(html):
-    nums = re.findall(r'"W(\d+)"', html)
-    return max(int(n) for n in nums) + 1 if nums else 72
+# Week numbers are anchored to dates (W72 = week of 2026-05-11), not max+1, so a
+# skipped week can be backfilled later without shifting later weeks' numbers.
+W72_MONDAY = date(2026, 5, 11)
+
+def week_num_for(monday):
+    return 72 + (monday - W72_MONDAY).days // 7
 
 # ── Snowflake ──────────────────────────────────────────────────────────────────
 
@@ -522,6 +525,10 @@ def update_js(js, week_key, week_data):
                  f"       Weeks are frozen snapshots — to replace one, delete "
                  f"{dupe} from ob_data.js first.")
 
+    if week_key in existing:
+        sys.exit(f"ERROR: {week_key} already exists with date {existing[week_key]['date']}, "
+                 f"not {week_data['date']}. Refusing to overwrite.")
+
     existing[week_key] = week_data
     new_json = json.dumps(existing, separators=(',', ':'))
     return DATA_PAT.sub(lambda x: f'{x.group(1)}{new_json}{x.group(3)}', js)
@@ -561,10 +568,10 @@ def main():
     # ── Step 1: Pull ob_data.js from GitHub ──
     print('\n[1] Downloading ob_data.js from GitHub...')
     js, sha  = github_get(DATA_FILE, token)
-    week_num = next_week_num(js)
+    week_num = week_num_for(monday)
     week_key = f'W{week_num}'
     label    = date_label(monday, sunday)
-    print(f'    Next week: {week_key} ({label})')
+    print(f'    Week: {week_key} ({label})')
 
     # ── Step 2: Snowflake ──
     print('\n[2] Connecting to Snowflake (SSO browser will open)...')
