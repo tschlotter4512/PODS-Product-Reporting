@@ -530,6 +530,7 @@ def update_js(js, week_key, week_data):
                  f"not {week_data['date']}. Refusing to overwrite.")
 
     existing[week_key] = week_data
+    existing = dict(sorted(existing.items(), key=lambda x: int(x[0][1:])))
     new_json = json.dumps(existing, separators=(',', ':'))
     return DATA_PAT.sub(lambda x: f'{x.group(1)}{new_json}{x.group(3)}', js)
 
