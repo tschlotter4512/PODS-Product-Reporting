@@ -1,0 +1,1671 @@
+{
+ "source": "OPSAT Index Trends 09.07.2026.xlsx, tab Market Baselines",
+ "params": {
+  "k": {
+   "opsat": 2,
+   "timing": 2,
+   "driver": 2,
+   "container": 2,
+   "placement": 2
+  },
+  "warn": {
+   "opsat": 0.67,
+   "timing": 0.67,
+   "driver": 0.67,
+   "container": 0.67,
+   "placement": 0.67
+  },
+  "slope_tol": {
+   "opsat": 0.15,
+   "timing": 0.15,
+   "driver": 0.15,
+   "container": 0.15,
+   "placement": 0.15
+  },
+  "h": {
+   "opsat": 4,
+   "timing": 4,
+   "driver": 4,
+   "container": 4,
+   "placement": 4
+  },
+  "p": {
+   "opsat": 2,
+   "timing": 2,
+   "driver": 2,
+   "container": 2,
+   "placement": 2
+  },
+  "lam": {
+   "opsat": 0.25,
+   "timing": 0.25,
+   "driver": 0.25,
+   "container": 0.25,
+   "placement": 0.25
+  },
+  "clamp": {
+   "opsat": 10,
+   "timing": 10,
+   "driver": 10,
+   "container": 10,
+   "placement": 10
+  },
+  "gate": {
+   "opsat": 30,
+   "timing": 30,
+   "driver": 30,
+   "container": 30,
+   "placement": 30
+  }
+ },
+ "markets": [
+  {
+   "region": "Northeast",
+   "market": "Albany, NY",
+   "flat": {
+    "opsat": -4.95,
+    "timing": -7.23,
+    "driver": -5.05,
+    "container": -2.73,
+    "placement": -3.07
+   },
+   "sigma": 6.64
+  },
+  {
+   "region": "Central",
+   "market": "Albuquerque - Santa Fe, NM",
+   "flat": {
+    "opsat": 1.12,
+    "timing": 1.6,
+    "driver": 1.2,
+    "container": 1.44,
+    "placement": -0.29
+   },
+   "sigma": 5.79
+  },
+  {
+   "region": "Franchisee",
+   "market": "Alexandria, LA",
+   "flat": {
+    "opsat": -6.8,
+    "timing": -11.37,
+    "driver": -5.91,
+    "container": -1.49,
+    "placement": -0.62
+   },
+   "sigma": 12.35
+  },
+  {
+   "region": "Southeast",
+   "market": "Asheville, NC",
+   "flat": {
+    "opsat": 2.61,
+    "timing": 1.47,
+    "driver": 3.34,
+    "container": -0.8,
+    "placement": 3.44
+   },
+   "sigma": 6.47
+  },
+  {
+   "region": "Southeast",
+   "market": "Atlanta NE, GA",
+   "flat": {
+    "opsat": -7.82,
+    "timing": -7.42,
+    "driver": -7.4,
+    "container": -10.25,
+    "placement": -7.05
+   },
+   "sigma": 5.01
+  },
+  {
+   "region": "Southeast",
+   "market": "Atlanta NW, GA",
+   "flat": {
+    "opsat": -0.82,
+    "timing": 0.46,
+    "driver": -0.88,
+    "container": -1.4,
+    "placement": -1.9
+   },
+   "sigma": 3.84
+  },
+  {
+   "region": "Southeast",
+   "market": "Augusta, GA",
+   "flat": {
+    "opsat": 1.54,
+    "timing": 4.42,
+    "driver": 1.2,
+    "container": -3.56,
+    "placement": 2.12
+   },
+   "sigma": 7.14
+  },
+  {
+   "region": "Central",
+   "market": "Austin, TX",
+   "flat": {
+    "opsat": -0.23,
+    "timing": -0.88,
+    "driver": 0.4,
+    "container": -1.88,
+    "placement": 0.23
+   },
+   "sigma": 3.03
+  },
+  {
+   "region": "West",
+   "market": "Bakersfield, CA",
+   "flat": {
+    "opsat": 2.77,
+    "timing": 2.36,
+    "driver": 1.86,
+    "container": 7.82,
+    "placement": 0.5
+   },
+   "sigma": 5.27
+  },
+  {
+   "region": "Northeast",
+   "market": "Baltimore, MD",
+   "flat": {
+    "opsat": 0.66,
+    "timing": 3.39,
+    "driver": 0.48,
+    "container": -1.55,
+    "placement": 0.57
+   },
+   "sigma": 2.98
+  },
+  {
+   "region": "Central",
+   "market": "Beaumont, TX",
+   "flat": {
+    "opsat": -8.4,
+    "timing": -8.09,
+    "driver": -7.48,
+    "container": -2.29,
+    "placement": -4.17
+   },
+   "sigma": 14.03
+  },
+  {
+   "region": "Northeast",
+   "market": "Bethlehem, PA",
+   "flat": {
+    "opsat": -2.78,
+    "timing": -4.41,
+    "driver": -2.17,
+    "container": -3.35,
+    "placement": -1.79
+   },
+   "sigma": 6.26
+  },
+  {
+   "region": "Central",
+   "market": "Birmingham, AL",
+   "flat": {
+    "opsat": 6.68,
+    "timing": 8.33,
+    "driver": 5.95,
+    "container": 7.18,
+    "placement": 5.84
+   },
+   "sigma": 4.21
+  },
+  {
+   "region": "West",
+   "market": "Boise, ID",
+   "flat": {
+    "opsat": 7.5,
+    "timing": 8.82,
+    "driver": 6.39,
+    "container": 6.53,
+    "placement": 7.39
+   },
+   "sigma": 2.99
+  },
+  {
+   "region": "Northeast",
+   "market": "Boston, MA",
+   "flat": {
+    "opsat": -2.06,
+    "timing": -2.12,
+    "driver": -1.82,
+    "container": -2.85,
+    "placement": -1.24
+   },
+   "sigma": 3.26
+  },
+  {
+   "region": "Central",
+   "market": "Boulder, CO",
+   "flat": {
+    "opsat": 2.94,
+    "timing": 3.98,
+    "driver": 2.79,
+    "container": 0.74,
+    "placement": 3.32
+   },
+   "sigma": 3.24
+  },
+  {
+   "region": "Northeast",
+   "market": "Buffalo, NY",
+   "flat": {
+    "opsat": -3,
+    "timing": -0.93,
+    "driver": -3.45,
+    "container": -4.23,
+    "placement": -3.64
+   },
+   "sigma": 5.26
+  },
+  {
+   "region": "Canada",
+   "market": "Calgary, AB Canada",
+   "flat": {
+    "opsat": 2.21,
+    "timing": 4.74,
+    "driver": 0.9,
+    "container": 3.76,
+    "placement": 0.36
+   },
+   "sigma": 6.19
+  },
+  {
+   "region": "Northeast",
+   "market": "Central Jersey, NJ",
+   "flat": {
+    "opsat": -0.37,
+    "timing": 0.01,
+    "driver": 0.1,
+    "container": -0.95,
+    "placement": 0.01
+   },
+   "sigma": 3.23
+  },
+  {
+   "region": "Central",
+   "market": "Central Texas",
+   "flat": {
+    "opsat": 2.02,
+    "timing": 1.96,
+    "driver": 2.17,
+    "container": 0.29,
+    "placement": 3.21
+   },
+   "sigma": 5.61
+  },
+  {
+   "region": "Southeast",
+   "market": "Charleston, SC",
+   "flat": {
+    "opsat": 3.18,
+    "timing": 3.73,
+    "driver": 3.26,
+    "container": 2.43,
+    "placement": 2
+   },
+   "sigma": 3.89
+  },
+  {
+   "region": "Southeast",
+   "market": "Charlotte, NC",
+   "flat": {
+    "opsat": -3.06,
+    "timing": -2.36,
+    "driver": -3.3,
+    "container": -2.31,
+    "placement": -4.74
+   },
+   "sigma": 4.3
+  },
+  {
+   "region": "Central",
+   "market": "Chattanooga, TN",
+   "flat": {
+    "opsat": 6.41,
+    "timing": 6.37,
+    "driver": 6.31,
+    "container": 7.82,
+    "placement": 4.44
+   },
+   "sigma": 6.1
+  },
+  {
+   "region": "Central",
+   "market": "Chicago, IL",
+   "flat": {
+    "opsat": -0.12,
+    "timing": -0.08,
+    "driver": 0.14,
+    "container": -1.3,
+    "placement": 0.91
+   },
+   "sigma": 2.34
+  },
+  {
+   "region": "Northeast",
+   "market": "Cincinnati, OH",
+   "flat": {
+    "opsat": 0.01,
+    "timing": 2.38,
+    "driver": -1.16,
+    "container": -0.27,
+    "placement": -0.08
+   },
+   "sigma": 3.72
+  },
+  {
+   "region": "Northeast",
+   "market": "Cleveland, OH",
+   "flat": {
+    "opsat": 3.27,
+    "timing": 3.12,
+    "driver": 3.52,
+    "container": 3.93,
+    "placement": 1.7
+   },
+   "sigma": 2.45
+  },
+  {
+   "region": "Central",
+   "market": "Colorado Springs, CO",
+   "flat": {
+    "opsat": 3.57,
+    "timing": 4.55,
+    "driver": 2.93,
+    "container": 3.33,
+    "placement": 3.73
+   },
+   "sigma": 3.82
+  },
+  {
+   "region": "Southeast",
+   "market": "Columbia, SC",
+   "flat": {
+    "opsat": -3.04,
+    "timing": -1.82,
+    "driver": -3.26,
+    "container": -2.65,
+    "placement": -5.1
+   },
+   "sigma": 6.39
+  },
+  {
+   "region": "Southeast",
+   "market": "Columbus, GA",
+   "flat": {
+    "opsat": -2.87,
+    "timing": -2.26,
+    "driver": -2.36,
+    "container": -5.78,
+    "placement": -2.04
+   },
+   "sigma": 7.95
+  },
+  {
+   "region": "Franchisee",
+   "market": "Columbus, OH",
+   "flat": {
+    "opsat": 2.51,
+    "timing": 2.66,
+    "driver": 2.45,
+    "container": 3.06,
+    "placement": 1.6
+   },
+   "sigma": 3.88
+  },
+  {
+   "region": "Central",
+   "market": "Corpus Christi, TX",
+   "flat": {
+    "opsat": 3.26,
+    "timing": 4.34,
+    "driver": 2.7,
+    "container": 3.69,
+    "placement": 3.23
+   },
+   "sigma": 5.84
+  },
+  {
+   "region": "Central",
+   "market": "Dallas, TX",
+   "flat": {
+    "opsat": -2.49,
+    "timing": -2.3,
+    "driver": -2.34,
+    "container": -3.43,
+    "placement": -2.72
+   },
+   "sigma": 2.7
+  },
+  {
+   "region": "Central",
+   "market": "Denver, CO",
+   "flat": {
+    "opsat": 0.09,
+    "timing": 1.67,
+    "driver": -0.45,
+    "container": -0.43,
+    "placement": -0.21
+   },
+   "sigma": 5.2
+  },
+  {
+   "region": "Northeast",
+   "market": "Detroit, MI",
+   "flat": {
+    "opsat": -0.52,
+    "timing": 0.2,
+    "driver": -0.79,
+    "container": 0.2,
+    "placement": -1.26
+   },
+   "sigma": 3.9
+  },
+  {
+   "region": "Northeast",
+   "market": "Dover, DE",
+   "flat": {
+    "opsat": 1.07,
+    "timing": 1.83,
+    "driver": 0.74,
+    "container": -1.58,
+    "placement": 2.69
+   },
+   "sigma": 4.01
+  },
+  {
+   "region": "Southeast",
+   "market": "Eastern - Greenville, NC",
+   "flat": {
+    "opsat": -2.14,
+    "timing": -0.59,
+    "driver": -2.9,
+    "container": -3.4,
+    "placement": -2.49
+   },
+   "sigma": 9.49
+  },
+  {
+   "region": "Canada",
+   "market": "Edmonton, AB Canada",
+   "flat": {
+    "opsat": -0.74,
+    "timing": -0.06,
+    "driver": -1.56,
+    "container": 1.78,
+    "placement": -1.79
+   },
+   "sigma": 6.47
+  },
+  {
+   "region": "Central",
+   "market": "El Paso, TX",
+   "flat": {
+    "opsat": 5.28,
+    "timing": 7.94,
+    "driver": 4.42,
+    "container": 4.37,
+    "placement": 5.17
+   },
+   "sigma": 5.91
+  },
+  {
+   "region": "West",
+   "market": "Eugene, OR",
+   "flat": {
+    "opsat": 1.12,
+    "timing": 2.53,
+    "driver": 0.93,
+    "container": -1.26,
+    "placement": 1.61
+   },
+   "sigma": 5.02
+  },
+  {
+   "region": "Southeast",
+   "market": "Fayetteville, NC",
+   "flat": {
+    "opsat": -0.76,
+    "timing": -0.82,
+    "driver": -0.26,
+    "container": -2.97,
+    "placement": 0.29
+   },
+   "sigma": 5.51
+  },
+  {
+   "region": "West",
+   "market": "Fresno, CA",
+   "flat": {
+    "opsat": 3.23,
+    "timing": 3.01,
+    "driver": 2.25,
+    "container": 7.21,
+    "placement": 2.09
+   },
+   "sigma": 5.29
+  },
+  {
+   "region": "Northeast",
+   "market": "Grand Rapids, MI",
+   "flat": {
+    "opsat": 1.76,
+    "timing": 2.76,
+    "driver": 1.03,
+    "container": 4.51,
+    "placement": -0.66
+   },
+   "sigma": 4.49
+  },
+  {
+   "region": "Franchisee",
+   "market": "Green Bay - Oshkosh, WI",
+   "flat": {
+    "opsat": 5.29,
+    "timing": 6.87,
+    "driver": 3.53,
+    "container": 8.26,
+    "placement": 4.65
+   },
+   "sigma": 3.84
+  },
+  {
+   "region": "Southeast",
+   "market": "Greensboro, NC",
+   "flat": {
+    "opsat": -3.57,
+    "timing": -4.97,
+    "driver": -2.52,
+    "container": -3.99,
+    "placement": -3.96
+   },
+   "sigma": 5.65
+  },
+  {
+   "region": "Southeast",
+   "market": "Greenville - Spartanburg, SC",
+   "flat": {
+    "opsat": 1.68,
+    "timing": 2.92,
+    "driver": 1.04,
+    "container": 0.76,
+    "placement": 1.05
+   },
+   "sigma": 4.21
+  },
+  {
+   "region": "Central",
+   "market": "Gulfport - Biloxi, MS",
+   "flat": {
+    "opsat": 0.96,
+    "timing": 1.93,
+    "driver": 1.23,
+    "container": -2.77,
+    "placement": 0.76
+   },
+   "sigma": 9.02
+  },
+  {
+   "region": "Canada",
+   "market": "Halifax, NS Canada",
+   "flat": {
+    "opsat": 4.85,
+    "timing": 7.92,
+    "driver": 3.66,
+    "container": 6.41,
+    "placement": 3.04
+   },
+   "sigma": 6.29
+  },
+  {
+   "region": "Northeast",
+   "market": "Harrisburg - Lancaster, PA",
+   "flat": {
+    "opsat": -6.69,
+    "timing": -7.3,
+    "driver": -6.52,
+    "container": -7.51,
+    "placement": -5.71
+   },
+   "sigma": 7.64
+  },
+  {
+   "region": "Northeast",
+   "market": "Hartford, CT",
+   "flat": {
+    "opsat": -2.72,
+    "timing": -4.44,
+    "driver": -2.44,
+    "container": -1.2,
+    "placement": -2.53
+   },
+   "sigma": 2.98
+  },
+  {
+   "region": "Central",
+   "market": "Hattiesburg, MS",
+   "flat": {
+    "opsat": 0.71,
+    "timing": -0.89,
+    "driver": 0.72,
+    "container": 5.61,
+    "placement": 0.78
+   },
+   "sigma": 11.97
+  },
+  {
+   "region": "West",
+   "market": "Honolulu, HI",
+   "flat": {
+    "opsat": 4.07,
+    "timing": 3.59,
+    "driver": 4.95,
+    "container": 6.43,
+    "placement": 5.47
+   },
+   "sigma": 4.01
+  },
+  {
+   "region": "Central",
+   "market": "Houston, TX",
+   "flat": {
+    "opsat": -1.94,
+    "timing": -3.95,
+    "driver": -1.35,
+    "container": -1.95,
+    "placement": -1.18
+   },
+   "sigma": 3.35
+  },
+  {
+   "region": "Northeast",
+   "market": "Hudson Valley, NY",
+   "flat": {
+    "opsat": -2.76,
+    "timing": -4.66,
+    "driver": -1.99,
+    "container": -3.06,
+    "placement": -0.48
+   },
+   "sigma": 3.88
+  },
+  {
+   "region": "Central",
+   "market": "Huntsville, AL",
+   "flat": {
+    "opsat": 3.18,
+    "timing": 3.31,
+    "driver": 2.76,
+    "container": 5.68,
+    "placement": 1.59
+   },
+   "sigma": 4.3
+  },
+  {
+   "region": "Franchisee",
+   "market": "Indianapolis, IN",
+   "flat": {
+    "opsat": 4.63,
+    "timing": 4.02,
+    "driver": 4.74,
+    "container": 3.89,
+    "placement": 5.44
+   },
+   "sigma": 3.76
+  },
+  {
+   "region": "Central",
+   "market": "Iowa",
+   "flat": {
+    "opsat": 1.74,
+    "timing": 4.12,
+    "driver": 1.4,
+    "container": -1.39,
+    "placement": -1.05
+   },
+   "sigma": 4.35
+  },
+  {
+   "region": "Central",
+   "market": "Jackson, MS",
+   "flat": {
+    "opsat": 1.79,
+    "timing": 4.76,
+    "driver": 1.44,
+    "container": -1.02,
+    "placement": 0.96
+   },
+   "sigma": 6.22
+  },
+  {
+   "region": "Southeast",
+   "market": "Jacksonville, FL",
+   "flat": {
+    "opsat": 1.25,
+    "timing": -0.27,
+    "driver": 1.47,
+    "container": 1.77,
+    "placement": 1.28
+   },
+   "sigma": 3.96
+  },
+  {
+   "region": "Northeast",
+   "market": "Jersey Shore, NJ",
+   "flat": {
+    "opsat": 4.07,
+    "timing": 4.82,
+    "driver": 4.25,
+    "container": 2.24,
+    "placement": 5.16
+   },
+   "sigma": 3.16
+  },
+  {
+   "region": "Central",
+   "market": "Johnson City, TN",
+   "flat": {
+    "opsat": 5.07,
+    "timing": 5,
+    "driver": 4.79,
+    "container": 7.35,
+    "placement": 3.81
+   },
+   "sigma": 5.62
+  },
+  {
+   "region": "Franchisee",
+   "market": "Kansas City, MO-KS",
+   "flat": {
+    "opsat": -3.1,
+    "timing": -4.93,
+    "driver": -1.98,
+    "container": -4.11,
+    "placement": -2.16
+   },
+   "sigma": 4.5
+  },
+  {
+   "region": "Central",
+   "market": "Knoxville, TN",
+   "flat": {
+    "opsat": 3.17,
+    "timing": 2.9,
+    "driver": 3.04,
+    "container": 3.4,
+    "placement": 2.51
+   },
+   "sigma": 5.26
+  },
+  {
+   "region": "Franchisee",
+   "market": "Las Vegas, NV",
+   "flat": {
+    "opsat": -1.84,
+    "timing": -4.54,
+    "driver": -1,
+    "container": -2.48,
+    "placement": -0.39
+   },
+   "sigma": 4.77
+  },
+  {
+   "region": "Northeast",
+   "market": "Lexington, KY",
+   "flat": {
+    "opsat": -3.44,
+    "timing": -1.5,
+    "driver": -3.34,
+    "container": -4.31,
+    "placement": -5.53
+   },
+   "sigma": 7.22
+  },
+  {
+   "region": "Central",
+   "market": "Little Rock, AR",
+   "flat": {
+    "opsat": 0.03,
+    "timing": 0.78,
+    "driver": -0.6,
+    "container": -0.1,
+    "placement": -0.16
+   },
+   "sigma": 5.82
+  },
+  {
+   "region": "Northeast",
+   "market": "Long Island, NY",
+   "flat": {
+    "opsat": -0.01,
+    "timing": 2.07,
+    "driver": -0.34,
+    "container": -0.37,
+    "placement": 0.1
+   },
+   "sigma": 2.58
+  },
+  {
+   "region": "West",
+   "market": "Los Angeles, CA",
+   "flat": {
+    "opsat": 2.51,
+    "timing": 1.8,
+    "driver": 2.32,
+    "container": 3.85,
+    "placement": 3.05
+   },
+   "sigma": 1.63
+  },
+  {
+   "region": "Northeast",
+   "market": "Louisville, KY",
+   "flat": {
+    "opsat": -1.89,
+    "timing": -2.32,
+    "driver": -1.32,
+    "container": -2.5,
+    "placement": -1.86
+   },
+   "sigma": 4.73
+  },
+  {
+   "region": "Central",
+   "market": "Lubbock, TX",
+   "flat": {
+    "opsat": -1.75,
+    "timing": -1.34,
+    "driver": -3.07,
+    "container": 0.19,
+    "placement": -0.91
+   },
+   "sigma": 8.93
+  },
+  {
+   "region": "Southeast",
+   "market": "Macon, GA",
+   "flat": {
+    "opsat": -4.91,
+    "timing": -4.54,
+    "driver": -5.17,
+    "container": -2.96,
+    "placement": -6.41
+   },
+   "sigma": 10.35
+  },
+  {
+   "region": "Franchisee",
+   "market": "McAllen, TX",
+   "flat": {
+    "opsat": -2.2,
+    "timing": -2.26,
+    "driver": -2.15,
+    "container": -5.48,
+    "placement": 2.05
+   },
+   "sigma": 8.84
+  },
+  {
+   "region": "West",
+   "market": "Medford, OR",
+   "flat": {
+    "opsat": 3.79,
+    "timing": 4.1,
+    "driver": 3.2,
+    "container": 3.3,
+    "placement": 4.9
+   },
+   "sigma": 5.84
+  },
+  {
+   "region": "Southeast",
+   "market": "Melbourne, FL",
+   "flat": {
+    "opsat": 4.46,
+    "timing": 5.42,
+    "driver": 3.74,
+    "container": 4.49,
+    "placement": 3.98
+   },
+   "sigma": 2.99
+  },
+  {
+   "region": "Central",
+   "market": "Memphis, TN",
+   "flat": {
+    "opsat": -2.94,
+    "timing": -5.39,
+    "driver": -2.21,
+    "container": -1.67,
+    "placement": -2.03
+   },
+   "sigma": 5.9
+  },
+  {
+   "region": "Central",
+   "market": "Milwaukee, WI",
+   "flat": {
+    "opsat": 0.5,
+    "timing": 1.62,
+    "driver": 0.27,
+    "container": 0.37,
+    "placement": -0.05
+   },
+   "sigma": 4.34
+  },
+  {
+   "region": "Central",
+   "market": "Minneapolis, MN",
+   "flat": {
+    "opsat": 1.09,
+    "timing": 1.24,
+    "driver": 0.74,
+    "container": 2.13,
+    "placement": 0.66
+   },
+   "sigma": 3.81
+  },
+  {
+   "region": "Southeast",
+   "market": "Mobile, AL",
+   "flat": {
+    "opsat": 5.19,
+    "timing": 5.89,
+    "driver": 4.32,
+    "container": 6.4,
+    "placement": 5.31
+   },
+   "sigma": 4.4
+  },
+  {
+   "region": "Southeast",
+   "market": "Montgomery, AL",
+   "flat": {
+    "opsat": -4.35,
+    "timing": -4.69,
+    "driver": -5.21,
+    "container": -0.95,
+    "placement": -5.05
+   },
+   "sigma": 9.04
+  },
+  {
+   "region": "Canada",
+   "market": "Montreal, QC Canada",
+   "flat": {
+    "opsat": -1.05,
+    "timing": 0.2,
+    "driver": -1.13,
+    "container": -0.32,
+    "placement": -2.41
+   },
+   "sigma": 6.32
+  },
+  {
+   "region": "Southeast",
+   "market": "Myrtle Beach SC/Wilmington NC",
+   "flat": {
+    "opsat": -0.99,
+    "timing": -0.57,
+    "driver": -1.55,
+    "container": -4.16,
+    "placement": -0.25
+   },
+   "sigma": 4.19
+  },
+  {
+   "region": "Central",
+   "market": "Nashville, TN",
+   "flat": {
+    "opsat": -1.07,
+    "timing": -1.88,
+    "driver": -0.73,
+    "container": -2.01,
+    "placement": -0.72
+   },
+   "sigma": 3.3
+  },
+  {
+   "region": "Central",
+   "market": "New Orleans - Baton Rouge, LA",
+   "flat": {
+    "opsat": -1.74,
+    "timing": -1.41,
+    "driver": -0.91,
+    "container": -3.67,
+    "placement": -0.9
+   },
+   "sigma": 3.33
+  },
+  {
+   "region": "West",
+   "market": "Northern California",
+   "flat": {
+    "opsat": 1.72,
+    "timing": 1.4,
+    "driver": 1.62,
+    "container": 3.06,
+    "placement": 1.77
+   },
+   "sigma": 2.07
+  },
+  {
+   "region": "Northeast",
+   "market": "Northern New Jersey, NJ",
+   "flat": {
+    "opsat": -0.55,
+    "timing": 0.54,
+    "driver": -0.14,
+    "container": -2.67,
+    "placement": 0.43
+   },
+   "sigma": 5.37
+  },
+  {
+   "region": "Franchisee",
+   "market": "Northwest Arkansas, AR",
+   "flat": {
+    "opsat": 2.42,
+    "timing": 4.22,
+    "driver": 0.89,
+    "container": 4.6,
+    "placement": 1.2
+   },
+   "sigma": 6.55
+  },
+  {
+   "region": "Southeast",
+   "market": "Ocala, FL",
+   "flat": {
+    "opsat": 0.38,
+    "timing": -3.39,
+    "driver": 1.07,
+    "container": 0.61,
+    "placement": 1.87
+   },
+   "sigma": 3.66
+  },
+  {
+   "region": "Central",
+   "market": "Oklahoma City, OK",
+   "flat": {
+    "opsat": 1.31,
+    "timing": 0.87,
+    "driver": 1.52,
+    "container": 1.26,
+    "placement": 1.45
+   },
+   "sigma": 5.32
+  },
+  {
+   "region": "Franchisee",
+   "market": "Omaha, NE",
+   "flat": {
+    "opsat": 0.11,
+    "timing": 2.12,
+    "driver": 0.18,
+    "container": -3.27,
+    "placement": 0.55
+   },
+   "sigma": 4.87
+  },
+  {
+   "region": "Southeast",
+   "market": "Orlando, FL",
+   "flat": {
+    "opsat": 2.04,
+    "timing": 2.36,
+    "driver": 1.77,
+    "container": 2.11,
+    "placement": 1.69
+   },
+   "sigma": 2.03
+  },
+  {
+   "region": "Canada",
+   "market": "Ottawa, ON Canada",
+   "flat": {
+    "opsat": 2.56,
+    "timing": 4.57,
+    "driver": 2.75,
+    "container": 1.51,
+    "placement": 0.99
+   },
+   "sigma": 4.18
+  },
+  {
+   "region": "Southeast",
+   "market": "Pensacola, FL",
+   "flat": {
+    "opsat": 0.19,
+    "timing": 0.46,
+    "driver": 0.6,
+    "container": -3.09,
+    "placement": 1.87
+   },
+   "sigma": 4.17
+  },
+  {
+   "region": "Central",
+   "market": "Peoria, IL",
+   "flat": {
+    "opsat": 2.32,
+    "timing": 2.16,
+    "driver": 0.84,
+    "container": 4.85,
+    "placement": 2.63
+   },
+   "sigma": 6.01
+  },
+  {
+   "region": "Northeast",
+   "market": "Philadelphia, PA",
+   "flat": {
+    "opsat": -10.57,
+    "timing": -11.38,
+    "driver": -10.04,
+    "container": -9.94,
+    "placement": -10.68
+   },
+   "sigma": 4.31
+  },
+  {
+   "region": "Franchisee",
+   "market": "Phoenix, AZ",
+   "flat": {
+    "opsat": -0.13,
+    "timing": -1.9,
+    "driver": -0.1,
+    "container": 1.24,
+    "placement": 0.18
+   },
+   "sigma": 2.66
+  },
+  {
+   "region": "Northeast",
+   "market": "Pittsburgh, PA",
+   "flat": {
+    "opsat": 0.84,
+    "timing": 1.5,
+    "driver": 1,
+    "container": 1.44,
+    "placement": -1.68
+   },
+   "sigma": 4.23
+  },
+  {
+   "region": "Northeast",
+   "market": "Portland, ME",
+   "flat": {
+    "opsat": 4.19,
+    "timing": 2.33,
+    "driver": 3.99,
+    "container": 6.69,
+    "placement": 4.27
+   },
+   "sigma": 4.16
+  },
+  {
+   "region": "West",
+   "market": "Portland, OR",
+   "flat": {
+    "opsat": -0.02,
+    "timing": -0.8,
+    "driver": 0.33,
+    "container": -0.68,
+    "placement": 0.83
+   },
+   "sigma": 2.72
+  },
+  {
+   "region": "Northeast",
+   "market": "Providence, RI",
+   "flat": {
+    "opsat": 0.75,
+    "timing": 0.1,
+    "driver": 0.95,
+    "container": 1.39,
+    "placement": 0.83
+   },
+   "sigma": 4.65
+  },
+  {
+   "region": "Southeast",
+   "market": "Raleigh, NC",
+   "flat": {
+    "opsat": 0.05,
+    "timing": 1.27,
+    "driver": -0.87,
+    "container": 0.96,
+    "placement": -0.97
+   },
+   "sigma": 3.17
+  },
+  {
+   "region": "Central",
+   "market": "Reno, NV",
+   "flat": {
+    "opsat": 3.17,
+    "timing": 2.51,
+    "driver": 2.41,
+    "container": 5.75,
+    "placement": 3.12
+   },
+   "sigma": 3.89
+  },
+  {
+   "region": "Southeast",
+   "market": "Richmond, VA",
+   "flat": {
+    "opsat": 0.62,
+    "timing": 2.86,
+    "driver": -0.12,
+    "container": 0.39,
+    "placement": 0.01
+   },
+   "sigma": 3.73
+  },
+  {
+   "region": "Southeast",
+   "market": "Roanoke - Lynchburg, VA",
+   "flat": {
+    "opsat": -0.08,
+    "timing": -1.09,
+    "driver": 0.07,
+    "container": 0.47,
+    "placement": 0.61
+   },
+   "sigma": 5.83
+  },
+  {
+   "region": "Northeast",
+   "market": "Rochester, NY",
+   "flat": {
+    "opsat": 0.8,
+    "timing": 2.99,
+    "driver": 1.18,
+    "container": -1.54,
+    "placement": -0.6
+   },
+   "sigma": 4.09
+  },
+  {
+   "region": "West",
+   "market": "Sacramento, CA",
+   "flat": {
+    "opsat": 4.73,
+    "timing": 5.9,
+    "driver": 3.77,
+    "container": 6.43,
+    "placement": 3.53
+   },
+   "sigma": 2.83
+  },
+  {
+   "region": "Central",
+   "market": "Salt Lake City, UT",
+   "flat": {
+    "opsat": 2.24,
+    "timing": 2.6,
+    "driver": 1.72,
+    "container": 2.96,
+    "placement": 1.39
+   },
+   "sigma": 3.62
+  },
+  {
+   "region": "Central",
+   "market": "San Antonio, TX",
+   "flat": {
+    "opsat": -0.37,
+    "timing": -0.96,
+    "driver": -0.32,
+    "container": -1.13,
+    "placement": 0.59
+   },
+   "sigma": 3.87
+  },
+  {
+   "region": "West",
+   "market": "San Diego, CA",
+   "flat": {
+    "opsat": 2.19,
+    "timing": 2.33,
+    "driver": 1.61,
+    "container": 3.55,
+    "placement": 2.48
+   },
+   "sigma": 3.16
+  },
+  {
+   "region": "Franchisee",
+   "market": "Santa Barbara, CA",
+   "flat": {
+    "opsat": 4.6,
+    "timing": 4.21,
+    "driver": 4.31,
+    "container": 5.93,
+    "placement": 4.85
+   },
+   "sigma": 2.54
+  },
+  {
+   "region": "Southeast",
+   "market": "Sarasota, FL",
+   "flat": {
+    "opsat": 2,
+    "timing": 2.71,
+    "driver": 2.02,
+    "container": 0.18,
+    "placement": 2.38
+   },
+   "sigma": 3.39
+  },
+  {
+   "region": "Southeast",
+   "market": "Savannah, GA",
+   "flat": {
+    "opsat": -1.94,
+    "timing": -4,
+    "driver": -1.85,
+    "container": -1.96,
+    "placement": -0.09
+   },
+   "sigma": 4.27
+  },
+  {
+   "region": "Northeast",
+   "market": "Scranton, PA",
+   "flat": {
+    "opsat": -3.84,
+    "timing": -5.84,
+    "driver": -1.8,
+    "container": -6.07,
+    "placement": -4.62
+   },
+   "sigma": 7.86
+  },
+  {
+   "region": "West",
+   "market": "Seattle, WA",
+   "flat": {
+    "opsat": -3.21,
+    "timing": -5.87,
+    "driver": -2.95,
+    "container": -0.4,
+    "placement": -3.42
+   },
+   "sigma": 2.51
+  },
+  {
+   "region": "Northeast",
+   "market": "Shenandoah Valley, VA",
+   "flat": {
+    "opsat": -1.29,
+    "timing": -3.06,
+    "driver": -0.61,
+    "container": -0.68,
+    "placement": -1.47
+   },
+   "sigma": 5.7
+  },
+  {
+   "region": "Central",
+   "market": "Shreveport, LA",
+   "flat": {
+    "opsat": 0.41,
+    "timing": -0.94,
+    "driver": 1.74,
+    "container": 0.34,
+    "placement": 0.15
+   },
+   "sigma": 8.64
+  },
+  {
+   "region": "Central",
+   "market": "Sioux Falls, SD",
+   "flat": {
+    "opsat": 6.25,
+    "timing": 6.33,
+    "driver": 6.34,
+    "container": 4.68,
+    "placement": 7.72
+   },
+   "sigma": 5.76
+  },
+  {
+   "region": "Southeast",
+   "market": "South Florida",
+   "flat": {
+    "opsat": 2.22,
+    "timing": 2.88,
+    "driver": 2.62,
+    "container": 0.98,
+    "placement": 2.4
+   },
+   "sigma": 2.14
+  },
+  {
+   "region": "West",
+   "market": "Spokane, WA",
+   "flat": {
+    "opsat": 3.26,
+    "timing": 3.28,
+    "driver": 2.3,
+    "container": 5.23,
+    "placement": 3.15
+   },
+   "sigma": 3.98
+  },
+  {
+   "region": "Franchisee",
+   "market": "Springfield, MO",
+   "flat": {
+    "opsat": 3.61,
+    "timing": 7.18,
+    "driver": 2.11,
+    "container": 1.4,
+    "placement": 4.71
+   },
+   "sigma": 5.32
+  },
+  {
+   "region": "Central",
+   "market": "St. Louis, MO",
+   "flat": {
+    "opsat": -3.8,
+    "timing": -5.24,
+    "driver": -2.97,
+    "container": -2.79,
+    "placement": -5.25
+   },
+   "sigma": 4.35
+  },
+  {
+   "region": "West",
+   "market": "Stockton-Modesto, CA",
+   "flat": {
+    "opsat": 4.25,
+    "timing": 4.84,
+    "driver": 3.53,
+    "container": 5.57,
+    "placement": 4.89
+   },
+   "sigma": 4.57
+  },
+  {
+   "region": "Northeast",
+   "market": "Syracuse, NY",
+   "flat": {
+    "opsat": 0.22,
+    "timing": 0.86,
+    "driver": 0.5,
+    "container": -0.11,
+    "placement": -0.89
+   },
+   "sigma": 4
+  },
+  {
+   "region": "Franchisee",
+   "market": "Tallahassee, FL",
+   "flat": {
+    "opsat": 0.94,
+    "timing": 1.27,
+    "driver": 1.07,
+    "container": -0.22,
+    "placement": 2.06
+   },
+   "sigma": 5.96
+  },
+  {
+   "region": "Southeast",
+   "market": "Tampa Bay, FL",
+   "flat": {
+    "opsat": -0.88,
+    "timing": -2.06,
+    "driver": -0.96,
+    "container": 1.23,
+    "placement": -1.47
+   },
+   "sigma": 2.1
+  },
+  {
+   "region": "Franchisee",
+   "market": "Texarkana, TX",
+   "flat": {
+    "opsat": -8.94,
+    "timing": -4.8,
+    "driver": -5.5,
+    "container": 7.84,
+    "placement": -3.63
+   },
+   "sigma": 17.38
+  },
+  {
+   "region": "Central",
+   "market": "Toledo, OH",
+   "flat": {
+    "opsat": -1.86,
+    "timing": -0.08,
+    "driver": -3.54,
+    "container": 1.6,
+    "placement": -3.11
+   },
+   "sigma": 4.9
+  },
+  {
+   "region": "Canada",
+   "market": "Toronto, ON Canada",
+   "flat": {
+    "opsat": -3.28,
+    "timing": -1.76,
+    "driver": -4.74,
+    "container": -0.25,
+    "placement": -4.12
+   },
+   "sigma": 4.31
+  },
+  {
+   "region": "Franchisee",
+   "market": "Tucson, AZ",
+   "flat": {
+    "opsat": -0.08,
+    "timing": 0.06,
+    "driver": -0.03,
+    "container": -1.07,
+    "placement": -0.52
+   },
+   "sigma": 3.78
+  },
+  {
+   "region": "Central",
+   "market": "Tulsa, OK",
+   "flat": {
+    "opsat": 0.39,
+    "timing": 1.53,
+    "driver": -0.32,
+    "container": 1.86,
+    "placement": -1.07
+   },
+   "sigma": 4.59
+  },
+  {
+   "region": "Franchisee",
+   "market": "Tyler, TX",
+   "flat": {
+    "opsat": -0.15,
+    "timing": -0.53,
+    "driver": 0.8,
+    "container": -1.71,
+    "placement": 0.51
+   },
+   "sigma": 6.09
+  },
+  {
+   "region": "Canada",
+   "market": "Vancouver, BC Canada",
+   "flat": {
+    "opsat": 1.35,
+    "timing": 0.41,
+    "driver": 2.05,
+    "container": 0.4,
+    "placement": 3.15
+   },
+   "sigma": 6.73
+  },
+  {
+   "region": "Southeast",
+   "market": "Virginia Beach, VA",
+   "flat": {
+    "opsat": -4.16,
+    "timing": -3.15,
+    "driver": -4.71,
+    "container": -4.57,
+    "placement": -3.62
+   },
+   "sigma": 3.86
+  },
+  {
+   "region": "Northeast",
+   "market": "Washington, DC",
+   "flat": {
+    "opsat": -4.79,
+    "timing": -5.75,
+    "driver": -3.81,
+    "container": -7.09,
+    "placement": -3.56
+   },
+   "sigma": 3.2
+  },
+  {
+   "region": "Central",
+   "market": "Wichita, KS",
+   "flat": {
+    "opsat": 4.24,
+    "timing": 3.3,
+    "driver": 3.88,
+    "container": 6.45,
+    "placement": 4.64
+   },
+   "sigma": 5.91
+  },
+  {
+   "region": "Canada",
+   "market": "Winnipeg, MB Canada",
+   "flat": {
+    "opsat": 3.41,
+    "timing": 2.8,
+    "driver": 2.51,
+    "container": 7.55,
+    "placement": 2.12
+   },
+   "sigma": 6.71
+  }
+ ]
+}
