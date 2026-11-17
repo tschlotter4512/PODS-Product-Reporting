@@ -3,6 +3,9 @@
 update_il_dashboard.py
 Weekly automation for the Integrated Labor dashboard.
 Run every Monday after downloading HaH Quotes and Orders CSVs.
+
+Also generates a per-agent performance CSV (period + all-time quotes/orders).
+Run twice a week: Monday (covers prior Fri-Sun) and Thursday (covers this Mon-Thu).
 """
 
 import json, base64, re, os, sys
@@ -12,6 +15,13 @@ from tkinter import filedialog
 import pandas as pd
 import requests
 import snowflake.connector
+from openpyxl import Workbook
+from openpyxl.styles import PatternFill, Font
+from openpyxl.utils import get_column_letter
+
+# ── Agent performance rating thresholds (Period Orders) ────────────────────────
+PERF_GREEN_MIN = 2   # 2+ orders in the period = green
+PERF_YELLOW_MIN = 1  # 1 order = yellow, 0 = red
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 CONFIG_PATH = r"F:\Revenue Management\Team Individual Folders\TSchlotter\PODS-Product-Reporting\config.json"
@@ -19,7 +29,20 @@ LOCAL_DIR   = r"F:\Revenue Management\Team Individual Folders\TSchlotter\PODS-Pr
 GITHUB_REPO = "tschlotter4512/PODS-Product-Reporting"
 LAUNCH_DATE = "2026-05-01"
 ECR                = 3700   # expected container revenue ($)
-AVG_CTR_PER_ORDER  = 1.3    # average containers per order
+# How far a PODS order may sit from the HaH labor booking and still be considered the
+# same job. Repeat customers have old orders on the same CID — without a cap, a labor
+# job can match an order booked years earlier (gaps of 1036 and 1496 days observed),
+# which then measures the WRONG order's cancellation. 83% of matches land within a
+# week. Set to 30 for now; tighten to 7 once volume supports it.
+MATCH_WINDOW_DAYS  = 30
+# Headcount assumed for the full-rollout scenario. This is an ASSUMPTION, not a
+# measurement — it drives projected_rollout_savings on IL_Internal_Opportunity_Wins.html
+# (removed from the main dashboard 2026-08-03 because the projection multiplies an
+# effect measured on ~11 containers by ~30x). Change it here, nowhere else.
+ROLLOUT_TARGET_AGENTS = 400
+AVG_CTR_PER_ORDER  = 1.3    # avg containers per order — ONLY for weights that are
+                            # order counts (legacy Tableau path). The Snowflake cancel
+                            # rate weights by actual containers, so it must NOT be used there.
 
 # ── Agent roster: dept + location for each trained agent ──────────────────────
 DEPT_MAP = {
@@ -89,6 +112,7 @@ DEPT_MAP = {
     "Nicole Slater":               ("Sales",   "CLW"),
     "Princess Heidi Sesma":        ("Service", "CNX"),
     "Rene Dunn":                   ("OB",      "CLW"),
+    "Ria Francisco":               ("Sales",   "CNX"),
     "Richard Stoffregen":          ("OB",      "CLW"),
     "Robert Dusenberry":           ("Sales",   "CLW"),
     "Ryan Dale Aldave":            ("SST",     "CNX"),
@@ -101,35 +125,81 @@ DEPT_MAP = {
     "Ted Johnson":                 ("Sales",   "CLW"),
     "Thaddaeus Paulo Malig":       ("OB",      "CNX"),
     "Viviane Peux":                ("SST",     "CLW"),
+    # Michelle Fallahee's team (added 2026-07-20)
+    "Shayla Brown":                ("Sales",   "CLW"),
+    "Ashley Burrell":              ("Sales",   "CLW"),
+    "Christopher Carlesimo":       ("Sales",   "CLW"),
+    "James P. Dempsey Jr.":        ("Sales",   "CLW"),
+    "Heidi Gathen":                ("Sales",   "CLW"),
+    "Tracy Heath":                 ("Sales",   "CLW"),
+    "Henssy Henriquez":            ("Sales",   "CLW"),
+    "Nathaniel Herden":            ("Sales",   "CLW"),
+    "Wendy Horowitz":              ("Sales",   "CLW"),
+    "Seiha Ly":                    ("Sales",   "CLW"),
+    "Gavin Novak":                 ("Sales",   "CLW"),
+    "Brian C. Quinn":              ("Sales",   "CLW"),
+    "LaVerne Reed":                ("Sales",   "CLW"),
+    "Cheryl Rosa":                 ("Sales",   "CLW"),
+    "Jalmise Victor":              ("Sales",   "CLW"),
+    # Jon'tae Ferguson's team (added 2026-07-20)
+    "Michael Alcalde":             ("Sales",   "CLW"),
+    "LaQuishia Brown":             ("Sales",   "CLW"),
+    "Alexander Cook":              ("Sales",   "CLW"),
+    "Gennaro Guardascione":        ("Sales",   "CLW"),
+    "Joy Hall":                    ("Sales",   "CLW"),
+    "James Jackson":               ("Sales",   "CLW"),
+    "Kasey M. Lockhart":           ("Sales",   "CLW"),
+    "Donavan O. Mitchell":         ("Sales",   "CLW"),
+    "Justin Myers Singh":          ("Sales",   "CLW"),
+    "Kelvin Pearce":               ("Sales",   "CLW"),
+    "Jordan Rosario Garcia":       ("Sales",   "CLW"),
+    "Scott Scalzo":                ("Sales",   "CLW"),
+    "Alfred Thornton":             ("Sales",   "CLW"),
+    "Blake Waters":                ("Sales",   "CLW"),
+    # Remaining "Other new agents" (added 2026-07-20)
+    "Stephen Hardwick":            ("Sales",   "CLW"),
+    "Alton Nelson":                ("Sales",   "CLW"),
+    "Lynna Stites":                ("Sales",   "CLW"),
+    "Scot Horowitz":               ("Sales",   "CLW"),
+    "Valerie Mabe":                ("Sales",   "CLW"),
+    "Leanne Souza":                ("Sales",   "CLW"),
+    "Henry Noble":                 ("Sales",   "CLW"),
+    "Jorden N. Murray":            ("Sales",   "CLW"),
+    "Tanisha Lee":                 ("Sales",   "CLW"),
+    "Latoya Jones":                ("Sales",   "CLW"),
+    "James Meckfessel":            ("Sales",   "CLW"),
+    "Charles Chambliss":           ("Sales",   "CLW"),
+    "Amy Ashmore":                 ("Sales",   "CLW"),
+    "Sakeema McCray":              ("Sales",   "CLW"),
+    "Patricia Paino":              ("Sales",   "CLW"),
+    "Gentian Grezda":              ("Sales",   "CLW"),
+    "Arlene Wethern":              ("Sales",   "CLW"),
+    "Frank Miedzianowski":         ("Sales",   "CLW"),
+    "Madeline Quiros":             ("Sales",   "CLW"),
+    "Caroline McMahon":            ("Sales",   "CLW"),
+    "Scott Schneider":             ("Sales",   "CLW"),
 }
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 # ── Agent username map: canonical name → ORDER_CONTAINER_SALES_FACT "Agent Container Booked By" ──
-AGENT_USERNAME_MAP = {
-    "Amy Sisterman":          "AMSisterman",
-    "Catherine Saitta":       "CSaitta",
-    "Ted Johnson":            "TWJohnson",
-    "Carmie Nillama":         "CNillama",
-    "Jeanielle Navarro":      "JNavarro2",
-    "Johnny Cardinale":       "JCardinale",
-    "Donald Alfaro":          "dalfaro",
-    "Nicole Slater":          "NHSlater",
-    "Felicia Knight":         "fknight",
-    "Kimberly Thebeau":       "KThebeau",
-    "Ednalyn Mirandilla":     "EMirandilla",
-    "Almira Castro":          "ACastro3",
-    "Katleen May Castro":     "KMCastro",
-    "Charmaine Bacay":        "CBacay",
-    "Sara Messenger":         "SMessenger",
-    "Christina Morales":      "cmorales",
-    "Christopher Monaldi":    "CMonaldi",
-    "Jake Russel Bernardino": "JRBernardino",
-    "Irish Verona":           "IVerona",
-    "James Onnagan":          "JOnnagan",
-    "James Rebualos":         "JRebualos",
-    "Jerico Galve":           "JGalve",
-    "Princess Heidi Sesma":   "PHSesma",
-}
+# Derived at runtime (see build_agent_username_map) from the Verint employee directory's
+# Email field — "smessenger@pods.com" -> "SMessenger", which is exactly the username
+# Snowflake's "Agent Container Booked By" column uses. Confirmed via spot-check that all
+# 129 current roster agents' derived usernames actually appear booking orders in
+# ORDER_CONTAINER_SALES_FACT. This used to be a hand-maintained list of ~23 agents (built
+# for the pitch-rate calc only) — that undercoverage is why it's now derived for the full
+# roster instead.
+def build_agent_username_map(directory, roster_names):
+    username_map = {}
+    for name in roster_names:
+        info = directory.get(name)
+        if not info:
+            m = fuzzy_match(name, list(directory.keys()))
+            info = directory.get(m) if m else None
+        email = info.get("email") if info else None
+        if email and "@" in email:
+            username_map[name] = email.split("@")[0]
+    return username_map
 
 def load_config():
     with open(CONFIG_PATH) as f:
@@ -144,6 +214,131 @@ def get_snowflake_conn(cfg):
         database="PROD_DW",
         schema="DW_SEMANTIC",
     )
+
+# ── PODS employee directory — used to auto-detect new PODS agents ─────────────
+def load_pods_employee_directory(conn):
+    """Latest row per employee from the Verint employee feed: name -> {email, organization}."""
+    sql = """
+    SELECT REPLACE("FirstName",'"','') AS FIRST_NAME,
+           REPLACE("LastName",'"','')  AS LAST_NAME,
+           REPLACE("Email",'"','')     AS EMAIL,
+           REPLACE("Organization",'"','') AS ORGANIZATION
+    FROM (
+      SELECT "FirstName","LastName","Email","Organization",
+             ROW_NUMBER() OVER (PARTITION BY "FirstName","LastName" ORDER BY LOAD_TIMESTAMP_TZ DESC) AS rn
+      FROM PROD_LAKE.VERINT_SAAS.VW_EMPLOYEEINFO2_CONSOLIDATED
+    )
+    WHERE rn = 1
+    """
+    cur = conn.cursor()
+    cur.execute(sql)
+    directory = {}
+    for first, last, email, org in cur.fetchall():
+        full = f"{first} {last}".strip()
+        directory[full] = {"email": email, "organization": org or ""}
+    return directory
+
+def guess_dept_loc(organization):
+    """Best-guess dept/location from a Verint Organization string. Always flagged for human review."""
+    org_l = organization.lower()
+    if "outbound" in org_l:
+        dept = "OB"
+    elif "sst" in org_l:
+        dept = "SST"
+    elif "sales" in org_l or "commercial" in org_l:
+        dept = "Sales"
+    elif "service" in org_l:
+        dept = "Service"
+    else:
+        dept = "SST"  # ambiguous org strings (e.g. ".. Hawaii City Sales") have skewed SST in practice
+    if "clw" in org_l:
+        loc = "CLW"
+    elif "concentrix philippines" in org_l or "cnx" in org_l:
+        loc = "CNX"
+    else:
+        loc = "—"
+    return dept, loc
+
+ROSTER_XLSX_PATH = r"F:\Revenue Management\Team Individual Folders\TSchlotter\Labor\Integrated Labor\IL_Agent_Roster 2.0.xlsx"
+ROSTER_XLSX_SHEETS = ["Jontae & Michelle (all set up)", "Other new agents"]
+
+# Supervisors who show up on the roster spreadsheet but don't take quotes/orders themselves —
+# exclude from the untracked-agent nag since they'll never need a DEPT_MAP entry.
+SUPERVISOR_NAMES = {
+    "Charles DeMeo", "Chris Crenshaw", "Cythia Maready", "Jacob Rosenweig",
+    "Jon'tae Ferguson", "Karel VanderZee", "Leonard Dixon", "Michelle Fallahee",
+    "Patrice Jernigan", "Peter Wozdusiewicz", "Sergio Jewell",
+}
+
+def detect_untracked_trained_agents(known_roster_names):
+    """Flag agents listed in the IL_Agent_Roster 2.0.xlsx onboarding tabs (the actual
+    source of truth for who's trained on IL) who aren't in DEPT_MAP yet. Catches newly
+    trained agents before they've shown any HaH activity, which detect_new_pods_agents
+    alone would miss. Dept can't be inferred from the roster (only location can) —
+    each hit needs a human to fill in Sales/SST/OB before pasting into DEPT_MAP."""
+    import openpyxl
+    try:
+        wb = openpyxl.load_workbook(ROSTER_XLSX_PATH, data_only=True)
+    except Exception as e:
+        print(f"  (skipped — could not open roster workbook: {e})")
+        return []
+
+    missing = []
+    for sheet_name in ROSTER_XLSX_SHEETS:
+        if sheet_name not in wb.sheetnames:
+            continue
+        ws = wb[sheet_name]
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if not row or not row[0]:
+                continue
+            if sheet_name == "Other new agents":
+                name, email, supervisor = (row + (None, None, None))[:3]
+                loc = None
+            else:  # Jontae & Michelle style: Supervisor, Last, First, Last-First, Location, Email
+                supervisor, last, first, _, loc, email = (row + (None,) * 6)[:6]
+                name = f"{first} {last}".strip() if first and last else None
+            if not name:
+                continue
+            name = str(name).replace("\xa0", " ").strip()
+            if fuzzy_match(name, known_roster_names) or fuzzy_match(name, SUPERVISOR_NAMES):
+                continue
+            missing.append({"name": name, "loc": loc or "?", "email": email, "supervisor": supervisor, "sheet": sheet_name})
+    return missing
+
+def detect_new_pods_agents(all_hah_names, directory, known_roster_names):
+    """Match HaH CSR names not already in DEPT_MAP against the real PODS employee
+    directory. Returns (new_agents, still_unmatched) where new_agents maps the
+    employee's canonical directory name -> dept/loc/email/org guess, and
+    still_unmatched are names with no PODS employee match at all (true HaH-only)."""
+    dir_by_norm = {}
+    for full_name, info in directory.items():
+        dir_by_norm.setdefault(normalize(full_name), []).append((full_name, info))
+
+    new_agents, still_unmatched = {}, []
+    for name in all_hah_names:
+        if fuzzy_match(name, known_roster_names):
+            continue  # already a known roster agent, handled normally
+        norm = normalize(name)
+        candidates = dir_by_norm.get(norm)
+        if not candidates:
+            parts = name.strip().split()
+            if len(parts) >= 2:
+                rev = normalize(' '.join(parts[1:] + [parts[0]]))
+                candidates = dir_by_norm.get(rev)
+        if candidates:
+            full_name, info = candidates[0]
+            org = info["organization"]
+            if "inactive" in org.lower():
+                still_unmatched.append(name)
+                continue
+            dept, loc = guess_dept_loc(org)
+            new_agents[full_name] = {
+                "dept": dept, "loc": loc,
+                "email": info["email"], "organization": org, "hah_name": name,
+            }
+        else:
+            still_unmatched.append(name)
+    return new_agents, still_unmatched
 
 def gh_get(token, path):
     r = requests.get(
@@ -181,6 +376,124 @@ def read_csv_auto(path):
         return pd.read_csv(path, encoding="utf-8")
     except UnicodeDecodeError:
         return pd.read_csv(path, encoding="utf-16")
+
+# ── Quotes archive ─────────────────────────────────────────────────────────────
+# The HaH quotes export is capped at 1000 rows and sorted newest-first, so it
+# silently drops the OLDEST quotes rather than erroring. At ~145 quotes/week that
+# is roughly seven weeks of history — which in Sep 2026 began cutting into the
+# 8-week trend chart, producing a week with more orders than quotes.
+#
+# Fix: keep every quote we have ever seen in a local archive keyed on Quote ID,
+# and read the dashboard off that instead of off one week's export. Safe to do
+# because the only quote fields this script uses — Quote ID and DateCreated — are
+# immutable. Mutable fields (Status, BookedCount) do go stale for quotes older
+# than the export window; nothing here reads them.
+QUOTES_ARCHIVE = os.path.join(LOCAL_DIR, "quotes_archive.csv")
+QUOTE_ID_COL   = "Quote ID"
+QUOTE_DATE_COL = "DateCreated"
+
+def _quote_dates(df):
+    return pd.to_datetime(df[QUOTE_DATE_COL], format="mixed", errors="coerce")
+
+def _clean_quotes(df, label):
+    """Drop rows with no Quote ID — trailing blank lines in the export."""
+    if QUOTE_ID_COL not in df.columns or QUOTE_DATE_COL not in df.columns:
+        print(f"  ⚠ {label}: missing '{QUOTE_ID_COL}' or '{QUOTE_DATE_COL}' column — cannot archive.")
+        print(f"    Columns found: {list(df.columns)}")
+        sys.exit(1)
+    out = df[df[QUOTE_ID_COL].notna()].copy()
+    if len(out) < len(df):
+        print(f"  {label}: skipped {len(df) - len(out)} row(s) with no {QUOTE_ID_COL}")
+    return out
+
+def load_quotes_archive():
+    if not os.path.exists(QUOTES_ARCHIVE):
+        return None
+    return _clean_quotes(read_csv_auto(QUOTES_ARCHIVE), "Archive")
+
+def merge_quotes_archive(incoming_df, label="Quotes export", allow_gap=False):
+    """Upsert one quotes export into the archive and return the full history.
+
+    Fresh rows win on Quote ID collision, so anything still inside the export's
+    1000-row window keeps its latest values.
+    """
+    incoming = _clean_quotes(incoming_df, label)
+    archive  = load_quotes_archive()
+
+    if archive is None:
+        merged = incoming
+        d = _quote_dates(merged).dropna()
+        print(f"  Created quotes archive: {len(merged):,} quotes "
+              f"({d.min():%Y-%m-%d} -> {d.max():%Y-%m-%d})")
+    else:
+        a_dates, i_dates = _quote_dates(archive).dropna(), _quote_dates(incoming).dropna()
+        # The gap guard. The export reaches back a fixed NUMBER OF ROWS, not a fixed
+        # date range, so skipping enough weeks means the newest export no longer
+        # touches the archive and the quotes in between are lost with no error.
+        # Refuse rather than write a hole nobody can see afterwards.
+        if not a_dates.empty and not i_dates.empty and i_dates.min() > a_dates.max():
+            missing_days = (i_dates.min() - a_dates.max()).days
+            print(f"\n  ⚠⚠⚠ GAP IN QUOTE HISTORY ⚠⚠⚠")
+            print(f"  Archive ends   {a_dates.max():%Y-%m-%d}")
+            print(f"  This export starts {i_dates.min():%Y-%m-%d}  ({missing_days} days later)")
+            print(f"  The export is row-capped, so it no longer reaches back to the archive.")
+            print(f"  Quotes in that window would be lost silently.")
+            print(f"  Fix: export the missing range separately, then run:")
+            print(f"       python update_il_dashboard.py --backfill")
+            if not allow_gap:
+                sys.exit(1)
+            print(f"  (--backfill: proceeding anyway)\n")
+
+        before = len(archive)
+        # Incoming last so keep='last' lets fresh rows overwrite archived ones.
+        merged = pd.concat([archive, incoming], ignore_index=True)
+        merged = merged.drop_duplicates(subset=[QUOTE_ID_COL], keep="last")
+        d = _quote_dates(merged).dropna()
+        print(f"  Quotes archive: {before:,} + {len(incoming):,} incoming "
+              f"-> {len(merged):,} unique (+{len(merged) - before:,} new)")
+        print(f"    history now spans {d.min():%Y-%m-%d} -> {d.max():%Y-%m-%d}")
+
+    merged = merged.sort_values(QUOTE_DATE_COL, key=lambda s: pd.to_datetime(s, format="mixed", errors="coerce"))
+    merged.to_csv(QUOTES_ARCHIVE, index=False, encoding="utf-8")
+    return merged
+
+def backfill_quotes_archive():
+    """One-time (or repeat) seeding of the archive from historical exports."""
+    print("=" * 50)
+    print("  Quotes Archive Backfill")
+    print("=" * 50)
+    existing = load_quotes_archive()
+    if existing is not None:
+        d = _quote_dates(existing).dropna()
+        print(f"\nCurrent archive: {len(existing):,} quotes "
+              f"({d.min():%Y-%m-%d} -> {d.max():%Y-%m-%d})")
+    else:
+        print("\nNo archive yet — this will create it.")
+
+    print("\nSelect one or more historical HaH Quotes CSVs (Ctrl+click for multiple)...")
+    root = tk.Tk(); root.attributes('-topmost', True); root.withdraw()
+    paths = filedialog.askopenfilenames(
+        parent=root, title="Select historical HaH Quotes CSV(s)",
+        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
+    root.destroy()
+    if not paths:
+        print("Nothing selected — aborting.")
+        sys.exit(1)
+
+    # Oldest file first so the newest export's values win any collision.
+    ordered = sorted(paths, key=lambda p: _quote_dates(_clean_quotes(read_csv_auto(p), os.path.basename(p))).max())
+    for p in ordered:
+        print(f"\n  Merging {os.path.basename(p)} ...")
+        merge_quotes_archive(read_csv_auto(p), os.path.basename(p), allow_gap=True)
+
+    final = load_quotes_archive()
+    d = _quote_dates(final).dropna()
+    print(f"\n✅ Archive now holds {len(final):,} quotes ({d.min():%Y-%m-%d} -> {d.max():%Y-%m-%d})")
+    print(f"   {QUOTES_ARCHIVE}")
+    print("\n   Check for gaps in the month-by-month counts below — a month that")
+    print("   dips sharply against its neighbours may mean a range was missed:")
+    for m, c in final.assign(_m=_quote_dates(final).dt.to_period("M")).groupby("_m").size().items():
+        print(f"     {m}  {c:>5,}")
 
 def last_sunday():
     today = datetime.now()
@@ -235,10 +548,140 @@ def fuzzy_match(hah_name, roster_names):
                 return rn
     return None
 
+# ── Re-attribute HaH-touched orders back to the originating PODS agent ────────
+def resolve_originating_agent(order_po, order_customer_id, order_date, quotes_df, roster_names):
+    """Find the agent who first quoted an order, by joining the order's PO # back
+    to the Quotes CSV.
+
+    Agents have been told at different times to put either the Customer ID (CID)
+    or the Order Number in the quote's PO # field, so both show up mixed in the
+    data. Resolve by:
+      1. Try PO # as a CID — match quotes on Customer_ID, and among those pick the
+         one whose DateCreated is closest to (and before) the order's date, since
+         a repeat customer can have several quotes over time and date narrows it
+         to the one that actually led to this order.
+      2. If no quote's Customer_ID matches, fall back to treating PO # as a literal
+         order/reference number and match quotes whose own PO # field equals it.
+      3. If neither matches, return None — no quote history recoverable (order was
+         likely started directly as a HaH order).
+    Returns the roster agent name of the best-matching quote, or None.
+    """
+    po = str(order_po).strip()
+    if po in ("", ".", "nan", "None"):
+        return None
+
+    candidates = pd.DataFrame()
+    try:
+        cid = int(float(po))
+    except ValueError:
+        cid = None
+    if cid is not None and "Customer_ID" in quotes_df.columns:
+        cid_matches = quotes_df[quotes_df["Customer_ID"] == cid]
+        if not cid_matches.empty:
+            candidates = cid_matches
+
+    if candidates.empty and "PO #" in quotes_df.columns:
+        candidates = quotes_df[quotes_df["PO #"].astype(str).str.strip() == po]
+
+    if candidates.empty:
+        return None
+
+    candidates = candidates.copy()
+    candidates["_qdt"] = pd.to_datetime(candidates["DateCreated"], format="mixed", errors="coerce")
+    candidates = candidates.dropna(subset=["_qdt"])
+    if candidates.empty:
+        return None
+
+    if pd.notna(order_date):
+        before = candidates[candidates["_qdt"] <= order_date]
+        best = before.loc[before["_qdt"].idxmax()] if not before.empty else candidates.loc[candidates["_qdt"].idxmin()]
+    else:
+        best = candidates.loc[candidates["_qdt"].idxmin()]
+
+    return fuzzy_match(str(best["CSR_Name"]), roster_names)
+
+
+def reattribute_hah_orders(quotes_df, orders_df, roster_names):
+    """Re-point orders whose CSR_Name isn't a known roster agent (i.e. would roll up
+    into the generic 'HaH Agent' bucket) back to the PODS agent who originated the
+    quote, when recoverable via the PO#/CID join in resolve_originating_agent.
+
+    Returns (modified orders_df, stats dict) — CSR_Name is overwritten in place for
+    reattributed rows so every downstream consumer (dashboard KPIs, weekly trends,
+    WoW, agent performance CSV) picks up the correction automatically.
+    """
+    orders_df = orders_df.copy()
+    order_dates = (
+        pd.to_datetime(orders_df["Date Booked"], format="mixed", errors="coerce")
+        if "Date Booked" in orders_df.columns else pd.Series([pd.NaT] * len(orders_df), index=orders_df.index)
+    )
+
+    reattributed, unresolved = 0, 0
+    for idx, row in orders_df.iterrows():
+        name = str(row.get("CSR_Name", "")).strip()
+        if not name or fuzzy_match(name, roster_names):
+            continue  # already a known roster agent — nothing to fix
+        resolved = resolve_originating_agent(
+            row.get("PO #"), row.get("Customer_ID"), order_dates.loc[idx], quotes_df, roster_names
+        )
+        if resolved:
+            orders_df.at[idx, "CSR_Name"] = resolved
+            reattributed += 1
+        else:
+            unresolved += 1
+
+    return orders_df, {"reattributed": reattributed, "unresolved": unresolved}
+
+
 # ── HaH CSV processing ─────────────────────────────────────────────────────────
-def process_hah_csvs(quotes_path, orders_path):
-    quotes_df = read_csv_auto(quotes_path)
-    orders_df = read_csv_auto(orders_path)
+def check_csv_freshness(quotes_df, orders_df):
+    """Warn loudly if one CSV's most recent date lags well behind the other's —
+    usually means a stale/cached export got picked instead of a fresh download,
+    which silently undercounts recent quotes/orders without erroring."""
+    date_cols_q = [c for c in quotes_df.columns if "date" in c.lower() and "creat" in c.lower()]
+    date_cols_o = [c for c in orders_df.columns if "date" in c.lower() and "book" in c.lower()]
+    if not date_cols_q or not date_cols_o:
+        return
+    q_max = pd.to_datetime(quotes_df[date_cols_q[0]], format="mixed").max()
+    o_max = pd.to_datetime(orders_df[date_cols_o[0]], format="mixed").max()
+    gap = abs((q_max - o_max).total_seconds()) / 3600
+    if gap > 24:
+        older, newer, older_max, newer_max = (
+            ("Orders", "Quotes", o_max, q_max) if o_max < q_max else ("Quotes", "Orders", q_max, o_max)
+        )
+        print(f"\n  ⚠⚠⚠ DATA FRESHNESS WARNING ⚠⚠⚠")
+        print(f"  {older} CSV's latest date is {older_max} — {newer} CSV goes up to {newer_max}.")
+        print(f"  That's a {gap:.0f}-hour gap. The {older} export looks stale (an old/cached download)")
+        print(f"  rather than a fresh pull — recent {older.lower()} will be undercounted in this report.")
+        print(f"  Recommend re-downloading a fresh {older} CSV before trusting these numbers.\n")
+
+def process_hah_csvs(quotes_df, orders_df, end_date):
+    # Both CSVs are exported "as of today", so a mid-week pull carries quotes and
+    # orders dated after the report's week-ending Sunday. Everything else on the
+    # dashboard (weekly trends, WoW, every Snowflake query) is bounded at end_date,
+    # so leaving these two unbounded made the headline KPIs run ahead of the charts
+    # sitting underneath them. Nothing is lost — the overhang lands in next week's run.
+    def clamp_to_end_date(df, label, kw):
+        cols = [c for c in df.columns if "date" in c.lower() and kw in c.lower()]
+        if not cols:
+            print(f"  ⚠ No {label} date column found — {label} NOT clamped to {end_date}")
+            return df
+        dt = pd.to_datetime(df[cols[0]], format="mixed", errors="coerce")
+        # An unparseable date becomes NaT, and every NaT comparison is False — so a
+        # naive `dt <= cutoff` would silently discard those rows as if they were in
+        # the future. Keep them and say so; dropping a real quote over a malformed
+        # date would undercount an agent with no visible sign it happened.
+        undated = dt.isna()
+        keep = (dt <= pd.Timestamp(end_date + " 23:59:59")) | undated
+        dropped = int((~keep).sum())
+        if dropped:
+            print(f"  {label}: excluded {dropped} row(s) dated after {end_date} (via {cols[0]})")
+        if undated.any():
+            print(f"  {label}: {int(undated.sum())} row(s) have no parseable {cols[0]} — kept, not clamped")
+        return df[keep]
+
+    quotes_df = clamp_to_end_date(quotes_df, "Quotes", "creat")
+    orders_df = clamp_to_end_date(orders_df, "Orders", "book")
 
     def find_col(df, keywords):
         for kw in keywords:
@@ -391,6 +834,491 @@ def read_cancel_rate_from_tableau_csv(csv_path, o_by_roster):
 
     return {"delta_7d": delta_7d, "delta_30d": delta_30d, "savings": savings, "primary_period": primary_period}
 
+# ── Cancel rate from Snowflake (replaces the Tableau "Labor Impact Table" pull) ──
+def compute_cancel_rate_from_snowflake(conn, directory, roster_names, orders_df, end_date):
+    """Compute the weighted 7d/30d labor-vs-regular cancel-rate delta straight from
+    ORDER_CONTAINER_SALES_FACT, replacing the weekly Tableau CSV pull.
+
+    For each HaH order, joins to Snowflake via its PO # field. Agents have been told
+    at different times to put either the Customer ID (CID) or the Order Number there,
+    so both show up mixed in the data — resolve by:
+      1. Try PO # as ORDER_CUSTOMER_DIM_KEY (the real CID). A repeat customer can have
+         several orders, so pick whichever is closest before (or nearest to) the HaH
+         order's own date.
+      2. If no CID match, fall back to PO # as a literal Order Number.
+      3. If neither matches, repeat steps 1-2 against the Reference ID field instead
+         (same CID-then-OrderNumber order) — a fallback for rows where PO # is blank
+         or garbage but Reference ID happens to hold a valid CID/order number.
+      4. If nothing matches, the order is unresolved and excluded — same as Tableau's
+         "missing PODS CID" bucket, except this recovers more of them since Tableau
+         only ever tries step 1 (CID-only).
+    'Regular' (baseline) cancel rate per agent is that agent's NON-LABOR Snowflake
+    bookings in the same window — the orders resolved above are excluded so the two
+    sides of the comparison are mutually exclusive. (Before 2026-08-03 the baseline
+    was ALL bookings, labor included, which put labor orders on both sides and
+    understated the delta.)
+
+    AGENT ATTRIBUTION is a fallback chain, because neither source is reliable alone:
+      1. HaH CSR_Name (after reattribute_hah_orders) if it lands on the roster — that
+         is the rep who actually sold the labor.
+      2. Otherwise Snowflake's "Agent Container Booked By".
+      3. Otherwise unattributed, and PRINTED so a missing roster member gets noticed.
+    Why both are needed: HaH overwrites CSR_Name with whoever last touched the order,
+    so ~28% of labor orders showed a HaH agent rather than the PODS seller. But going
+    PODS-only was worse in a different way — 20 orders were booked by a colleague who
+    merely keyed the container while a trained agent did the selling, and every one of
+    them named a roster agent on the HaH side.
+
+    The baseline still keys off "Agent Container Booked By", so an agent can be credited
+    with a labor container a colleague booked. That is deliberate: we are measuring the
+    effect of SELLING labor, not of keying the order.
+
+    NOT "Agent Original Order Booked By": one PODS order can accumulate containers
+    booked by different agents on different days. "Original" credits whoever opened
+    the order — sometimes years earlier (observed gaps of 185, 1036 and 1496 days on
+    repeat customers) — so an agent who adds a container to an existing order, and
+    sells the labor on it, gets no credit.
+    Weighting: each agent's delta is weighted by their labor order count IN THE SAME
+    WINDOW being measured (not cumulative since launch). Weighting by cumulative volume
+    while measuring the rate on a trailing window let agents with a big historical
+    footprint but little/no recent activity distort the average — the sample the rate
+    is computed from should be the same sample that determines its weight.
+    """
+    orders_df = orders_df.copy()
+    orders_df["_dt"] = pd.to_datetime(orders_df["Date Booked"], format="mixed", errors="coerce")
+    # NOTE: HaH-cancelled orders are deliberately KEPT here. If a customer was sold
+    # labor, they belong in the labor group regardless of whether the labor job later
+    # fell through — dropping them filters on the outcome, and those are exactly the
+    # customers most likely to also cancel their container. Excluding them removed the
+    # worst cases from the labor side and flattered the program. (Other call sites in
+    # this script still exclude cancelled orders; that is correct for counting bookings,
+    # but wrong here.)
+    # _roster (the fuzzy-matched HaH CSR_Name) is kept only to report how often PODS
+    # disagrees with it. Rows that DON'T match the roster are deliberately NOT dropped:
+    # those are mostly orders a HaH agent modded, which overwrote CSR_Name with a
+    # non-PODS name. The PODS lookup below recovers the real selling agent, so filtering
+    # on the HaH name here would throw away exactly the orders we can now attribute.
+    orders_df["_roster"] = orders_df["CSR_Name"].apply(lambda n: fuzzy_match(str(n), roster_names))
+    orders_df["_po"] = orders_df["PO #"].astype(str).str.strip()
+    orders_df = orders_df[~orders_df["_po"].isin(["", ".", "nan", "None"])]
+    orders_df["_ref"] = orders_df["Reference ID"].astype(str).str.strip()
+    orders_df.loc[orders_df["_ref"].isin(["", ".", "nan", "None"]), "_ref"] = None
+
+    username_map = build_agent_username_map(directory, roster_names)
+
+    cur = conn.cursor()
+    def fetch_df(sql):
+        cur.execute(sql)
+        cols = [c[0] for c in cur.description]
+        return pd.DataFrame(cur.fetchall(), columns=cols)
+
+    cids, ordnums = set(), set()
+    for v in list(orders_df["_po"]) + [v for v in orders_df["_ref"] if v is not None]:
+        try:
+            n = int(float(v))
+            cids.add(n)
+            ordnums.add(n)
+        except ValueError:
+            pass
+    if not cids:
+        raise ValueError("No linkable PO # values found in Orders CSV")
+
+    cid_list = ",".join(str(c) for c in cids)
+    snow_by_cid = fetch_df(f"""
+        SELECT "ORDER_CUSTOMER_DIM_KEY" AS CID, "Order Number" AS ORDER_NUMBER,
+               UPPER("Agent Container Booked By") AS PODS_AGENT,
+               "Date Order Booked" AS DATE_BOOKED, "Date Container Cancelled" AS CANCEL_DATE,
+               "Cancelled Container Count" AS CANCELLED, "Gross Container Count" AS GROSS
+        FROM PROD_DW.DW_SEMANTIC.ORDER_CONTAINER_SALES_FACT
+        WHERE "ORDER_CUSTOMER_DIM_KEY" IN ({cid_list})
+    """)
+    ordnum_list = ",".join(str(o) for o in ordnums)
+    snow_by_ordnum = fetch_df(f"""
+        SELECT "Order Number" AS ORDER_NUMBER,
+               UPPER("Agent Container Booked By") AS PODS_AGENT,
+               "Date Order Booked" AS DATE_BOOKED, "Date Container Cancelled" AS CANCEL_DATE,
+               "Cancelled Container Count" AS CANCELLED, "Gross Container Count" AS GROSS
+        FROM PROD_DW.DW_SEMANTIC.ORDER_CONTAINER_SALES_FACT
+        WHERE "Order Number" IN ({ordnum_list})
+    """)
+    usernames = list(username_map.values())
+    username_list = ", ".join(f"'{u.upper()}'" for u in usernames)
+    snow_regular = fetch_df(f"""
+        SELECT UPPER("Agent Container Booked By") AS USERNAME, "Order Number" AS ORDER_NUMBER,
+               "Date Order Booked" AS DATE_BOOKED, "Date Container Cancelled" AS CANCEL_DATE,
+               "Cancelled Container Count" AS CANCELLED, "Gross Container Count" AS GROSS
+        FROM PROD_DW.DW_SEMANTIC.ORDER_CONTAINER_SALES_FACT
+        WHERE UPPER("Agent Container Booked By") IN ({username_list})
+          AND "Date Order Booked" >= '{LAUNCH_DATE}' AND "Date Order Booked" <= '{end_date}'
+    """)
+
+    for _df in (snow_by_cid, snow_by_ordnum, snow_regular):
+        _df["DATE_BOOKED"] = pd.to_datetime(_df["DATE_BOOKED"])
+        _df["CANCEL_DATE"] = pd.to_datetime(_df["CANCEL_DATE"])
+    cid_groups = {k: v for k, v in snow_by_cid.groupby("CID")}
+    ordnum_groups = {k: v for k, v in snow_by_ordnum.groupby("ORDER_NUMBER")}
+    username_to_roster = {v.upper(): k for k, v in username_map.items()}
+    snow_regular["agent"] = snow_regular["USERNAME"].map(username_to_roster)
+
+    def resolve_one(id_str, hah_date):
+        """Return EVERY container row of the matched PODS order.
+
+        ORDER_CONTAINER_SALES_FACT is container-grain — one row per container, with
+        "Gross Container Count" always 1. Returning a single row (as this did before
+        2026-08-03) counted only one container of a multi-container order, so the
+        labor side was effectively measured in orders while the non-labor baseline
+        was measured in containers. Labor orders average ~1.44 containers, so that
+        silently dropped roughly a third of the labor population.
+        """
+        try:
+            cid = int(float(id_str))
+        except ValueError:
+            return None
+        cand = cid_groups.get(cid)
+        if cand is None or cand.empty:
+            cand = ordnum_groups.get(cid)
+        if cand is None or cand.empty:
+            return None
+        # Choose the closest ORDER (a repeat customer may have several), then keep
+        # all of that order's containers.
+        per_order = cand.groupby("ORDER_NUMBER")["DATE_BOOKED"].min()
+        if pd.notna(hah_date):
+            # Discard candidates too far from the labor booking to be the same job.
+            within = per_order[(per_order - hah_date).abs().dt.days <= MATCH_WINDOW_DAYS]
+            if within.empty:
+                return None      # unresolved rather than matched to an unrelated order
+            before = within[within <= hah_date]
+            pick = before.idxmax() if not before.empty else within.idxmin()
+        else:
+            pick = per_order.idxmin()
+        return cand[cand["ORDER_NUMBER"] == pick]
+
+    def resolve(po_str, ref_str, hah_date):
+        grp = resolve_one(po_str, hah_date)
+        if grp is not None and not grp.empty:
+            return grp
+        if ref_str is not None:
+            return resolve_one(ref_str, hah_date)
+        return None
+
+    results = []
+    labor_order_numbers = set()   # PODS orders that ARE labor — excluded from the non-labor baseline
+    by_hah_name = 0          # credited from the HaH CSR (post-reattribution)
+    recovered_by_pods = 0    # HaH name unusable, PODS booking agent rescued it
+    split_credit = 0         # both known but they disagree — labor seller != container booker
+    unattributed = []        # neither source lands on the roster; reported, never silent
+    for _, row in orders_df.iterrows():
+        grp = resolve(row["_po"], row["_ref"], row["_dt"])
+        if grp is None or grp.empty:
+            continue
+        ordnum = int(grp["ORDER_NUMBER"].iloc[0])
+        if ordnum in labor_order_numbers:
+            continue   # two HaH rows resolved to the same PODS order — count its containers once
+        labor_order_numbers.add(ordnum)
+
+        # ── Attribution fallback chain ───────────────────────────────────────
+        # Neither source is trustworthy on its own:
+        #   * HaH CSR_Name gets overwritten when a HaH agent mods the order, so ~28% of
+        #     labor orders showed a HaH agent instead of the PODS rep who sold it.
+        #   * The PODS booking agent is often a colleague who merely keyed the container
+        #     while a trained agent did the selling — 20 such orders observed, every one
+        #     with a roster agent named on the HaH side.
+        # So: believe the HaH name when it resolves to a roster agent (that IS the person
+        # who sold the labor), and fall back to the PODS booking agent when it doesn't.
+        # Note this can credit an agent for a container someone else booked — intentional,
+        # since we're measuring the effect of SELLING labor, not of keying the order.
+        pods_user  = str(grp["PODS_AGENT"].iloc[0]).upper().strip()
+        pods_agent = username_to_roster.get(pods_user)
+        hah_agent  = None if pd.isna(row["_roster"]) else row["_roster"]
+
+        if hah_agent is not None:
+            agent = hah_agent
+            by_hah_name += 1
+            if pods_agent is not None and pods_agent != hah_agent:
+                split_credit += 1
+        elif pods_agent is not None:
+            agent = pods_agent
+            recovered_by_pods += 1
+        else:
+            unattributed.append((pods_user, str(row.get("CSR_Name", "?"))))
+            continue
+
+        for _, c in grp.iterrows():
+            results.append({
+                "agent":       agent,
+                "ordnum":      ordnum,
+                "cancelled":   int(c["CANCELLED"]),
+                "gross":       int(c["GROSS"]),
+                # PODS booking/cancel dates, not the HaH ones — days-to-cancel is a PODS event
+                "booked":      c["DATE_BOOKED"],
+                "cancel_date": c["CANCEL_DATE"],
+            })
+    res_df = pd.DataFrame(results, columns=["agent", "ordnum", "cancelled", "gross", "booked", "cancel_date"])
+    print(f"  Labor: {len(labor_order_numbers)} PODS orders -> {len(res_df)} containers "
+          f"({len(res_df)/max(len(labor_order_numbers),1):.2f} per order)")
+    print(f"  Attribution: {by_hah_name} via HaH CSR name, {recovered_by_pods} recovered via the PODS "
+          f"booking agent, {len(unattributed)} unattributed")
+    if split_credit:
+        print(f"    ({split_credit} of those had a DIFFERENT roster agent booking the container than "
+              f"selling the labor — credited to the seller)")
+    if unattributed:
+        # Never drop these silently: if a real IL agent is missing from DEPT_MAP this is
+        # the only place it shows up, since detect_new_pods_agents only reads HaH names.
+        print(f"    Unattributed labor orders — neither the HaH name nor the PODS booking agent is on "
+              f"the roster. Add to DEPT_MAP if any is a trained IL agent:")
+        from collections import Counter
+        for (pods_u, hah_n), cnt in Counter(unattributed).most_common():
+            print(f"      PODS '{pods_u}' / HaH '{hah_n}'  x{cnt}")
+
+    # Baseline must be NON-labor orders, not all orders. Leaving the labor orders in
+    # here puts them on both sides of the comparison, which pulls the two rates
+    # together and understates the delta.
+    before_n = len(snow_regular)
+    snow_regular = snow_regular[~snow_regular["ORDER_NUMBER"].isin(labor_order_numbers)]
+    print(f"  Baseline: excluded {before_n - len(snow_regular)} labor orders -> {len(snow_regular)} non-labor orders")
+
+    end_dt = pd.Timestamp(end_date + " 23:59:59")
+    res_df["booked"]      = pd.to_datetime(res_df["booked"])
+    res_df["cancel_date"] = pd.to_datetime(res_df["cancel_date"])
+
+    # Drop containers on PODS orders booked before launch. A labor job sold in May can
+    # legitimately match an order booked in late April (inside MATCH_WINDOW_DAYS), but
+    # the non-labor baseline is already bounded at LAUNCH_DATE by its query — so keeping
+    # them would put containers on the labor side from a period the baseline can't see.
+    _pre = len(res_df)
+    res_df = res_df[res_df["booked"] >= pd.Timestamp(LAUNCH_DATE)]
+    if _pre != len(res_df):
+        print(f"  Dropped {_pre - len(res_df)} labor container(s) on pre-launch PODS orders")
+
+    # ── Labor attach rate ─────────────────────────────────────────────────────
+    # Deliberately NOT maturity-filtered: whether an order has labor is known the day
+    # it's booked, so the 30-day cutoff the cancel rate needs would just discard a
+    # month of perfectly good data here. Measured in ORDERS because labor is sold per
+    # move (one crew loads all of a customer's containers), not per container.
+    attach_win = res_df[res_df["booked"] <= end_dt]
+    labor_orders = int(attach_win["ordnum"].nunique())
+    tot_orders = fetch_df(f"""
+        SELECT COUNT(DISTINCT "Order Number") AS ORDERS
+        FROM PROD_DW.DW_SEMANTIC.ORDER_CONTAINER_SALES_FACT
+        WHERE UPPER("Agent Container Booked By") IN ({username_list})
+          AND "Date Order Booked" >= '{LAUNCH_DATE}' AND "Date Order Booked" <= '{end_date}'
+    """)["ORDERS"].iloc[0]
+    attach_rate = round(100.0 * labor_orders / int(tot_orders), 2) if tot_orders else 0.0
+    print(f"  Attach rate: {labor_orders} labor orders / {int(tot_orders):,} roster orders = {attach_rate}%")
+
+    def _cancelled_within(df, booked_col, cancel_col, cancelled_col, days):
+        """Containers that cancelled within `days` of being booked. Rows that never
+        cancelled, or cancelled later than the threshold, contribute 0."""
+        lag = (df[cancel_col] - df[booked_col]).dt.days
+        return df[cancelled_col].where(lag.notna() & (lag <= days), 0)
+
+    def weighted_delta(days, collect_rows=None):
+        # "Cancelled within N days of booking", measured across every order old enough
+        # to have had the full N days to cancel.
+        #
+        # The old version asked "of orders BOOKED in the last N days, how many
+        # cancelled?" — which put brand-new orders in the denominator before they'd
+        # had time to go bad, systematically understating the rate and making the
+        # 7d and 30d figures non-comparable. The maturity cutoff below is one step
+        # stricter than Ross's model, which leaves immature orders in the denominator.
+        cutoff = end_dt - pd.Timedelta(days=days)
+        lab_win = res_df[res_df["booked"] <= cutoff].copy()
+        reg_win = snow_regular[snow_regular["DATE_BOOKED"] <= cutoff].copy()
+        lab_win["_c"] = _cancelled_within(lab_win, "booked", "cancel_date", "cancelled", days)
+        reg_win["_c"] = _cancelled_within(reg_win, "DATE_BOOKED", "CANCEL_DATE", "CANCELLED", days)
+        w_sum, total_weight, used, no_data, no_orders = 0.0, 0.0, 0, 0, 0
+        # Running totals across the agents that actually count, so the dashboard can
+        # show the raw numbers behind the delta instead of just the delta.
+        tot = {"labor_ctr": 0, "labor_cx": 0, "reg_ctr": 0, "reg_cx": 0}
+        for agent in roster_names:
+            lab = lab_win[lab_win["agent"] == agent]
+            lg, lc = int(lab["gross"].sum()), int(lab["_c"].sum())
+            if lg == 0:
+                no_orders += 1
+                continue
+            reg = reg_win[reg_win["agent"] == agent]
+            rg, rc = int(reg["GROSS"].sum()), int(reg["_c"].sum())
+            if rg == 0:
+                no_data += 1
+                continue
+            tot["labor_ctr"] += lg; tot["labor_cx"] += lc
+            tot["reg_ctr"]   += rg; tot["reg_cx"]   += rc
+            weight = lg  # weight by this agent's mature labor container count
+            labor_cr = lc / lg
+            regular_cr = rc / rg
+            delta = labor_cr - regular_cr
+            w_sum += delta * weight
+            total_weight += weight
+            used += 1
+            if collect_rows is not None:
+                # Same units as the aggregate savings formula (abs(delta_30d/100) * total_weight
+                # * ECR): this agent's *signed* dollar slice of that total. Summing this column
+                # across all rows reproduces the reported $ savings exactly (as long as most
+                # deltas share the same sign, which they do in practice).
+                savings_contribution = delta * weight * ECR
+                collect_rows.append({
+                    "agent": agent,
+                    "labor_gross": lg, "labor_cancelled": lc, "labor_cr": round(labor_cr * 100, 1),
+                    "regular_gross": rg, "regular_cancelled": rc, "regular_cr": round(regular_cr * 100, 1),
+                    "delta_pp": round(delta * 100, 1),
+                    "weight": weight,
+                    "savings_contribution": round(savings_contribution),
+                })
+        return w_sum, total_weight, used, no_data, no_orders, tot
+
+    w7, tw7, used7, nodata7, noord7, tot7 = weighted_delta(7)
+    agent_rows_30d = []
+    w30, tw30, used30, nodata30, noord30, tot30 = weighted_delta(30, collect_rows=agent_rows_30d)
+
+    if agent_rows_30d:
+        total_weight_30d = sum(r["weight"] for r in agent_rows_30d)
+        total_savings_30d = sum(r["savings_contribution"] for r in agent_rows_30d)
+        for r in agent_rows_30d:
+            r["weight_pct"] = round(r["weight"] / total_weight_30d * 100, 1) if total_weight_30d else 0.0
+            r["pct_of_total_savings"] = (
+                round(r["savings_contribution"] / total_savings_30d * 100, 1) if total_savings_30d else 0.0
+            )
+        agent_rows_30d.sort(key=lambda r: abs(r["savings_contribution"]), reverse=True)
+        cols = ["agent", "labor_gross", "labor_cancelled", "labor_cr",
+                "regular_gross", "regular_cancelled", "regular_cr", "delta_pp",
+                "weight", "weight_pct", "savings_contribution", "pct_of_total_savings"]
+        out_path = os.path.join(LOCAL_DIR, f"il_cancel_rate_by_agent_30d_{end_date}.csv")
+        pd.DataFrame(agent_rows_30d, columns=cols).to_csv(out_path, index=False)
+        print(f"  Per-agent 30d labor-vs-regular breakdown written to {out_path}")
+        print(f"  Sum of savings_contribution = ${round(total_savings_30d):,} (should match reported 30d savings)")
+
+    if tw7 == 0 and tw30 == 0:
+        raise ValueError("No IL agents with usable Snowflake labor+regular cancel data found.")
+
+    delta_7d  = round(w7  / tw7  * 100, 1) if tw7  else 0.0
+    delta_30d = round(w30 / tw30 * 100, 1) if tw30 else 0.0
+
+    print(f"  7d:  {used7} agents used, {nodata7} matched-but-missing-labor/regular data, {noord7} no labor orders yet")
+    print(f"  30d: {used30} agents used, {nodata30} matched-but-missing-labor/regular data, {noord30} no labor orders yet")
+
+    # Always drive savings off the 30-day window — more sample size, less week-to-week
+    # whiplash than letting a noisy 7-day spike take over (used to pick whichever
+    # window had the larger-magnitude delta; that let a single volatile week swing
+    # the $ figure).
+    primary_period = 30
+    primary_delta  = delta_30d
+    total_weight   = tw30
+    # No AVG_CTR_PER_ORDER here: total_weight is already a CONTAINER count (summed
+    # "Gross Container Count"), so applying an orders->containers factor would count
+    # containers twice. The constant still applies in the legacy Tableau path, whose
+    # weights are order counts.
+    savings        = round(abs(primary_delta) / 100 * total_weight * ECR)
+    print(f"  Savings driven by 30-day delta ({primary_delta}pp)")
+
+    # ── Uncertainty band on the 30-day delta ─────────────────────────────────
+    # The delta rests on a small number of labor containers, so a point estimate on its
+    # own is misleading. Standard error of the labor rate dominates — the non-labor
+    # baseline has thousands of containers and contributes almost nothing. Effective n is
+    # the labor ORDER count, not the container count: containers on one order cancel
+    # together, so treating them as independent would understate the interval.
+    lg30, lc30 = tot30["labor_ctr"], tot30["labor_cx"]
+    cutoff30 = end_dt - pd.Timedelta(days=30)
+    eff_n = int(res_df[res_df["booked"] <= cutoff30]["ordnum"].nunique()) or 1
+    p = (lc30 / lg30) if lg30 else 0.0
+    se_pp = 100.0 * ((p * (1 - p) / eff_n) ** 0.5)
+    margin = round(1.96 * se_pp, 1)
+    delta_low  = round(delta_30d - margin, 1)   # more negative = bigger benefit
+    delta_high = round(delta_30d + margin, 1)
+    savings_low  = round(max(abs(delta_high), 0) / 100 * total_weight * ECR) if delta_high < 0 else 0
+    savings_high = round(abs(delta_low) / 100 * total_weight * ECR)
+    print(f"  95% band on 30d delta: {delta_low}pp .. {delta_high}pp "
+          f"(±{margin}pp, effective n = {eff_n} labor orders)")
+    print(f"  Savings range: ${savings_low:,} .. ${savings_high:,}")
+
+    # ── Cancel rate by BOOKING MONTH cohort ───────────────────────────────────
+    # The blended figure above hides drift: a strong early month keeps propping it
+    # up for months after the effect has faded. This groups orders by the month they
+    # were booked and asks the same question of each cohort. Pooled (SUM/SUM) rather
+    # than the per-agent weighted delta — monthly slices are too thin per agent.
+    # A month is only shown once every order in it has had the full 30 days.
+    def cancel_by_month(days=30):
+        cutoff = end_dt - pd.Timedelta(days=days)
+        lab = res_df.copy()
+        reg = snow_regular.copy()
+        lab["_m"] = lab["booked"].dt.to_period("M")
+        reg["_m"] = reg["DATE_BOOKED"].dt.to_period("M")
+        # Nothing before the launch month: a labor job booked in early May can match a
+        # PODS order booked in late April (inside MATCH_WINDOW_DAYS), which produced a
+        # stray 1-container "Apr" cohort. The program didn't exist then.
+        launch_m = pd.Period(LAUNCH_DATE, freq="M")
+        out = []
+        for mth in sorted(set(lab["_m"].dropna()) | set(reg["_m"].dropna())):
+            if mth < launch_m:
+                continue
+            month_end = mth.to_timestamp(how="end")
+            mature    = month_end <= cutoff
+            lm = lab[(lab["_m"] == mth) & (lab["booked"]      <= cutoff)]
+            rm = reg[(reg["_m"] == mth) & (reg["DATE_BOOKED"] <= cutoff)]
+            lg, rg = int(lm["gross"].sum()), int(rm["GROSS"].sum())
+            # Date this cohort is finally complete = month end + the full cancel window.
+            complete_after = (month_end + pd.Timedelta(days=days)).strftime("%b %d").replace(" 0", " ")
+            row = {"month": str(mth), "label": mth.strftime("%b"),
+                   "labor_containers": lg, "mature": bool(mature),
+                   "complete_after": complete_after}
+            if lg and rg:
+                lc = int(_cancelled_within(lm, "booked", "cancel_date", "cancelled", days).sum())
+                rc = int(_cancelled_within(rm, "DATE_BOOKED", "CANCEL_DATE", "CANCELLED", days).sum())
+                row["labor_cr"]   = round(100 * lc / lg, 1)
+                row["regular_cr"] = round(100 * rc / rg, 1)
+                row["delta"]      = round(100 * (lc / lg - rc / rg), 1)
+            else:
+                row["labor_cr"] = row["regular_cr"] = row["delta"] = None
+            out.append(row)
+        return out
+
+    by_month = cancel_by_month(30)
+    print("  Cancel rate by booking month (30d):")
+    for r in by_month:
+        if r["delta"] is None:
+            print(f"    {r['label']}: no comparable data yet ({r['labor_containers']} labor ctrs)")
+        else:
+            flag = "" if r["mature"] else "  <- still maturing"
+            print(f"    {r['label']}: labor {r['labor_cr']}% vs regular {r['regular_cr']}% "
+                  f"= {r['delta']}pp on {r['labor_containers']} labor ctrs{flag}")
+
+    # Raw numbers behind each delta, so the dashboard can show its own working.
+    def _detail(days, tot, agents_used):
+        lg, lc, rg, rc = tot["labor_ctr"], tot["labor_cx"], tot["reg_ctr"], tot["reg_cx"]
+        return {
+            "days": days,
+            "labor_containers":   lg,
+            "labor_cancelled":    lc,
+            "labor_cr":           round(100 * lc / lg, 1) if lg else None,
+            "regular_containers": rg,
+            "regular_cancelled":  rc,
+            "regular_cr":         round(100 * rc / rg, 1) if rg else None,
+            "agents":             agents_used,
+            "cutoff":             (end_dt - pd.Timedelta(days=days)).strftime("%Y-%m-%d"),
+            # Human-readable booking window this figure actually covers. Ends at the
+            # maturity cutoff, not the report date — the last N days aren't eligible yet.
+            "covers_from":        pd.Timestamp(LAUNCH_DATE).strftime("%b %d").replace(" 0", " "),
+            "covers_to":          (end_dt - pd.Timedelta(days=days)).strftime("%b %d").replace(" 0", " "),
+        }
+
+    return {"delta_7d": delta_7d, "delta_30d": delta_30d, "savings": savings,
+            "primary_period": primary_period, "by_month": by_month,
+            "range": {"delta_low": delta_low, "delta_high": delta_high,
+                      "savings_low": savings_low, "savings_high": savings_high,
+                      "margin_pp": margin, "effective_n": eff_n},
+            "detail_7d":  _detail(7,  tot7,  used7),
+            "detail_30d": _detail(30, tot30, used30),
+            "attach_rate": attach_rate,
+            "attach_detail": {
+                "labor_orders": labor_orders,
+                "labor_containers": int(len(attach_win)),
+                "total_orders": int(tot_orders),
+                "agents":       int(attach_win["agent"].nunique()),
+                "roster":       len(roster_names),
+                "from":         pd.Timestamp(LAUNCH_DATE).strftime("%b %d").replace(" 0", " "),
+                "to":           end_dt.strftime("%b %d").replace(" 0", " "),
+            }}
+
+
 # ── Load previous agent data from il_data.js ──────────────────────────────────
 def load_existing_agents():
     path = os.path.join(LOCAL_DIR, "il_data.js")
@@ -435,41 +1363,73 @@ def build_agents(q_by_hah, o_by_hah, all_hah_names, prev_agents):
         o_totals[roster_name] = o_totals.get(roster_name, 0) + o_by_hah.get(hah_name, 0)
 
     agents = []
+    ratchet_engaged = []
     for name, (dept, loc) in DEPT_MAP.items():
         prev = prev_agents.get(name, {})
-        # Use CSV value if present; fall back to previous value (never go below prior)
-        quoted = max(q_totals.get(name, 0), prev.get("quoted", 0))
-        booked = max(o_totals.get(name, 0), prev.get("booked", 0))
+        # Quotes never go below prior — a created quote stays created forever, even
+        # if the deal falls through, so the CSV's cumulative count should only grow.
+        # Kept as a safety net, but now that quotes come from the archive rather than
+        # a row-capped export it should never actually engage. When it does, say so:
+        # this silently masked seven weeks of missing history before the archive
+        # existed, and a silent mask is how that went unnoticed.
+        from_data = q_totals.get(name, 0)
+        quoted = max(from_data, prev.get("quoted", 0))
+        if from_data < prev.get("quoted", 0):
+            ratchet_engaged.append((name, from_data, prev["quoted"]))
+        # Orders are NOT clamped to prior — unlike quotes, a booked order can be
+        # legitimately cancelled after the fact, which should reduce this count.
+        # Trust the CSV's current active (non-cancelled) total directly.
+        booked = o_totals.get(name, 0)
         agents.append({"name": name, "dept": dept, "loc": loc, "quoted": quoted, "booked": booked})
+
+    if ratchet_engaged:
+        total_masked = sum(p - f for _, f, p in ratchet_engaged)
+        print(f"\n  ⚠ Quote ratchet engaged for {len(ratchet_engaged)} agent(s) — "
+              f"data shows {total_masked} fewer quote(s) than last week, prior values kept.")
+        print(f"    With the archive in place this should not happen. Likely causes:")
+        print(f"    archive was reset/corrupted, or quotes were deleted in HaH.")
+        for n, f, p in sorted(ratchet_engaged, key=lambda x: x[2] - x[1], reverse=True)[:5]:
+            print(f"      - {n}: data {f}, prior {p}")
 
     # HaH Agent rollup row — quotes/orders from HaH agents not on the PODS roster
     prev_hah = prev_agents.get(HAH_AGENT_NAME, {})
     hah_quoted = max(q_totals.get(HAH_AGENT_NAME, 0), prev_hah.get("quoted", 0))
-    hah_booked = max(o_totals.get(HAH_AGENT_NAME, 0), prev_hah.get("booked", 0))
+    hah_booked = o_totals.get(HAH_AGENT_NAME, 0)
     if hah_quoted or hah_booked:
         agents.append({"name": HAH_AGENT_NAME, "dept": "HaH", "loc": "—", "quoted": hah_quoted, "booked": hah_booked})
 
     agents.sort(key=lambda a: (-a["booked"], -a["quoted"], a["name"]))
     return agents
 
-def q_total_orders_by_agent(conn, end_date):
-    """Query total orders per IL agent from ORDER_CONTAINER_SALES_FACT using username map."""
-    usernames = list(AGENT_USERNAME_MAP.values())
-    username_list = ", ".join(f"'{u}'" for u in usernames)
+def q_total_orders_by_agent(conn, end_date, username_map):
+    """Total PODS orders AND containers per roster agent since launch.
+
+    Returns (orders_by_agent, containers_by_agent). Both are needed: pitch rate and
+    attach rate work in orders, while opportunity sizing works in containers.
+    """
+    usernames = list(username_map.values())
+    username_list = ", ".join(f"'{u.upper()}'" for u in usernames)
     sql = f"""
-    SELECT "Agent Container Booked By", COUNT(DISTINCT "Order Number") AS total_orders
+    SELECT UPPER("Agent Container Booked By") AS USERNAME,
+           COUNT(DISTINCT "Order Number") AS total_orders,
+           COUNT(*)                        AS total_containers
     FROM PROD_DW.DW_SEMANTIC.ORDER_CONTAINER_SALES_FACT
     WHERE "Date Order Booked" >= '{LAUNCH_DATE}'
       AND "Date Order Booked" <= '{end_date}'
-      AND "Agent Container Booked By" IN ({username_list})
-    GROUP BY "Agent Container Booked By"
+      AND UPPER("Agent Container Booked By") IN ({username_list})
+    GROUP BY 1
     """
     cur = conn.cursor()
     cur.execute(sql)
-    username_to_orders = {row[0]: row[1] for row in cur.fetchall()}
-    # Reverse map: username → roster name
-    username_to_roster = {v: k for k, v in AGENT_USERNAME_MAP.items()}
-    return {username_to_roster[u]: cnt for u, cnt in username_to_orders.items() if u in username_to_roster}
+    rows = cur.fetchall()
+    username_to_roster = {v.upper(): k for k, v in username_map.items()}
+    orders, containers = {}, {}
+    for user, o, c in rows:
+        name = username_to_roster.get(user)
+        if name:
+            orders[name] = o
+            containers[name] = c
+    return orders, containers
 
 def compute_dept_stats(agents, total_orders_by_agent=None):
     stats = {}
@@ -529,11 +1489,27 @@ def load_existing_cancel_data():
     delta_30d = extract_float("cancel_delta_30d")
     m = re.search(r"cancel_delta_primary_period:\s*(\d+)", content)
     primary_period = int(m.group(1)) if m else (7 if abs(delta_7d) >= abs(delta_30d) else 30)
+    # json.dumps(indent=2) closes the array with "]" at column 0, so anchor on that
+    # rather than an indented bracket.
+    m = re.search(r"cancel_by_month:\s*(\[[\s\S]*?\n\])\s*,", content)
+    try:
+        by_month = json.loads(m.group(1)) if m else []
+    except Exception:
+        by_month = []
+    m2 = re.search(r"labor_attach_detail:\s*(\{[\s\S]*?\n\})\s*,", content)
+    try:
+        attach_detail = json.loads(m2.group(1)) if m2 else {}
+    except Exception:
+        attach_detail = {}
     return {
         "delta_7d":       delta_7d,
         "delta_30d":      delta_30d,
         "savings":        extract_int("cancel_savings"),
         "primary_period": primary_period,
+        "by_month":       by_month,
+        "attach_rate":    extract_float("labor_attach_rate"),
+        "attach_detail":  attach_detail,
+        "range":          {},
     }
 
 def load_prev_totals():
@@ -664,28 +1640,155 @@ def build_wow_data(quotes_df, orders_df, hah_to_roster, end_date):
     return dept_wow, agent_wow
 
 
+# ── Agent performance CSV: trailing 7 days + all-time, per agent ──────────────
+def report_window(today=None):
+    """Return (start, end) timestamps for a rolling trailing-7-day window ending
+    today, regardless of which day of the week the script is run. Simple and
+    consistent — always answers "who's been active in the last week," not tied
+    to a Mon/Thu run cadence."""
+    today = today or datetime.now()
+    end   = today.replace(hour=23, minute=59, second=59, microsecond=0)
+    start = (end - timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return pd.Timestamp(start), pd.Timestamp(end)
+
+
+def build_agent_performance_csv(quotes_df, orders_df, hah_to_roster, agents, report_end_date):
+    """Write a per-agent CSV: trailing-7-day quotes/orders (per report_window) + all-time quotes/orders.
+
+    report_end_date (the report's week-ending Sunday, same as il_data.js) names the
+    output file, so re-running for the same reporting week overwrites one file
+    instead of piling up a new file per calendar day the script happens to run.
+    """
+    start_dt, end_dt = report_window()
+
+    qdf = quotes_df[quotes_df["CSR_Name"].isin(hah_to_roster)].copy()
+    odf = orders_df[orders_df["CSR_Name"].isin(hah_to_roster) & ~orders_df["OrderStatus"].str.lower().str.contains("cancel", na=False)].copy()
+
+    date_cols_q = [c for c in qdf.columns if "date" in c.lower() and "creat" in c.lower()]
+    date_cols_o = [c for c in odf.columns if "date" in c.lower() and "book" in c.lower()]
+    if not date_cols_q or not date_cols_o:
+        print("  WARNING: could not detect date columns — skipping agent performance CSV")
+        return None
+
+    qdf["_dt"] = pd.to_datetime(qdf[date_cols_q[0]], format="mixed")
+    odf["_dt"] = pd.to_datetime(odf[date_cols_o[0]], format="mixed")
+    qdf["_roster"] = qdf["CSR_Name"].map(hah_to_roster)
+    odf["_roster"] = odf["CSR_Name"].map(hah_to_roster)
+
+    q_id_col = next((c for c in qdf.columns if "quote" in c.lower() and "id" in c.lower()), None)
+    o_id_col = next((c for c in odf.columns if "order" in c.lower() and "#" in c.lower()), None)
+
+    qsub = qdf[(qdf["_dt"] >= start_dt) & (qdf["_dt"] <= end_dt)]
+    osub = odf[(odf["_dt"] >= start_dt) & (odf["_dt"] <= end_dt)]
+
+    q_period = qsub.groupby("_roster")[q_id_col].nunique().to_dict() if q_id_col else qsub.groupby("_roster").size().to_dict()
+    o_period = osub.groupby("_roster")[o_id_col].nunique().to_dict() if o_id_col else osub.groupby("_roster").size().to_dict()
+
+    rows = []
+    for a in agents:
+        name = a["name"]
+        rows.append({
+            "Agent":               name,
+            "Dept":                a["dept"],
+            "Location":            a["loc"],
+            "Last 7 Days Quotes":  int(q_period.get(name, 0)),
+            "Last 7 Days Orders":  int(o_period.get(name, 0)),
+            "All-Time Quotes":     a["quoted"],
+            "All-Time Orders":     a["booked"],
+        })
+    rows.sort(key=lambda r: (-r["Last 7 Days Orders"], -r["Last 7 Days Quotes"], r["Agent"]))
+
+    fname = f"agent_performance_{report_end_date}.xlsx"
+    out_path = os.path.join(LOCAL_DIR, fname)
+    write_agent_performance_xlsx(rows, out_path)
+    print(f"  ✓ Agent performance XLSX ({start_dt.date()} to {end_dt.date()}): {out_path}")
+    return out_path
+
+
+def write_agent_performance_xlsx(rows, out_path):
+    """Write agent performance rows to .xlsx, coloring the Last 7 Days Orders cell
+    red/yellow/green based on PERF_GREEN_MIN / PERF_YELLOW_MIN thresholds."""
+    RED    = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+    YELLOW = PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid")
+    GREEN  = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
+
+    headers = ["Agent", "Dept", "Location", "Last 7 Days Quotes", "Last 7 Days Orders", "All-Time Quotes", "All-Time Orders"]
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Agent Performance"
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    orders_col = headers.index("Last 7 Days Orders") + 1
+    for row in rows:
+        ws.append([row[h] for h in headers])
+        r = ws.max_row
+        orders = row["Last 7 Days Orders"]
+        fill = RED if orders < PERF_YELLOW_MIN else (YELLOW if orders < PERF_GREEN_MIN else GREEN)
+        ws.cell(row=r, column=orders_col).fill = fill
+
+    for i, h in enumerate(headers, start=1):
+        width = max(len(h), max((len(str(row[h])) for row in rows), default=0)) + 2
+        ws.column_dimensions[get_column_letter(i)].width = width
+
+    wb.save(out_path)
+
+
 def build_il_data_js(end_date, agents, dept_stats, cancel_data, weekly_trends,
-                     prev_orders, prev_quotes, prev_savings, dept_wow, agent_wow):
+                     prev_orders, prev_quotes, prev_savings, dept_wow, agent_wow,
+                     total_containers_by_agent=None):
+    total_containers_by_agent = total_containers_by_agent or {}
     total_quotes  = sum(a["quoted"] for a in agents)
     total_orders  = sum(a["booked"] for a in agents)
     conv_rate     = round(total_orders / total_quotes * 100, 1) if total_quotes else 0
-    total_agents  = len(agents)
-    active_agents = sum(1 for a in agents if a["quoted"] > 0)
+    # Adoption counts must exclude the synthetic "HaH Agent" rollup row — it is a bucket
+    # for non-PODS names, not a person. Including it made total_agents 130 against a
+    # 129-agent roster, so "X of 130 active" was measured against a fake denominator.
+    real_agents   = [a for a in agents if a["name"] != HAH_AGENT_NAME]
+    total_agents  = len(real_agents)
+    active_agents = sum(1 for a in real_agents if a["quoted"] > 0)
 
     savings        = cancel_data["savings"]
     delta_7d       = cancel_data["delta_7d"]
     delta_30d      = cancel_data["delta_30d"]
     primary_period = cancel_data["primary_period"]
+    by_month       = cancel_data.get("by_month", [])
+    detail_7d      = cancel_data.get("detail_7d")  or {}
+    detail_30d     = cancel_data.get("detail_30d") or {}
+    attach_rate    = cancel_data.get("attach_rate")
+    attach_detail  = cancel_data.get("attach_detail") or {}
+    cancel_range   = cancel_data.get("range") or {}
+    if attach_rate is None:
+        attach_rate = 0.0            # Snowflake path failed; loader below supplies the old value
 
-    # Annualized = actual monthly run rate (cumulative savings / months since launch) × 12
+    # NOTE: annualized_savings was removed 2026-08-03. It divided cumulative savings by
+    # the full elapsed period, but `savings` only covers bookings up to the 30-day
+    # maturity cutoff — so the divisor spanned about a month more than the numerator.
+    # It also annualised an effect measured on ~11 containers. Not worth repairing.
     launch_dt         = datetime.strptime(LAUNCH_DATE, "%Y-%m-%d")
     end_dt             = datetime.strptime(end_date, "%Y-%m-%d")
     months_elapsed     = max((end_dt - launch_dt).days / 30.44, 1 / 30.44)
     monthly_savings    = savings / months_elapsed
-    annualized         = round(monthly_savings * 12)
     monthly_per_agent  = monthly_savings / active_agents if active_agents else 0
-    projected_total    = round(monthly_per_agent * 220 * 12)
+    projected_total    = round(monthly_per_agent * ROLLOUT_TARGET_AGENTS * 12)
     projected_str      = f"~${projected_total:,}"
+    # Inputs behind the projection, so the card can show its own working. Two known
+    # weaknesses are deliberately surfaced rather than hidden: months_elapsed spans the
+    # full period while `savings` only covers bookings up to the 30-day maturity cutoff,
+    # and active_agents counts anyone who QUOTED, not the smaller set that actually
+    # produced the savings. Both understate the per-agent rate; correcting them roughly
+    # triples the projection, which is itself a signal the linear model is fragile.
+    projected_detail = {
+        "savings":            savings,
+        "months_elapsed":     round(months_elapsed, 2),
+        "monthly_savings":    round(monthly_savings),
+        "active_agents":      active_agents,
+        "monthly_per_agent":  round(monthly_per_agent),
+        "rollout_agents":     ROLLOUT_TARGET_AGENTS,
+        "containers_actual":  round(savings / ECR, 1),
+        "containers_implied": round(projected_total / ECR),
+    }
 
     # Silent grid from agents
     silent_grid = []
@@ -698,18 +1801,38 @@ def build_il_data_js(end_date, agents, dept_stats, cancel_data, weekly_trends,
                 "silent": sum(1 for a in grp if a["quoted"] == 0),
             })
 
-    # Opportunity table (static estimates — update if you have container denominators)
-    opp_table = [
-        {"dept": "OB",    "desc": f"All {dept_stats.get('OB',{}).get('total',43)} fully trained",
-         "silent": dept_stats.get("OB",{}).get("total",43) - dept_stats.get("OB",{}).get("active",0),
-         "est_containers": "~3,320", "est_missed": "~442", "priority": "Critical"},
-        {"dept": "Sales", "desc": f"{dept_stats.get('Sales',{}).get('total',15) - dept_stats.get('Sales',{}).get('active',0)} silent",
-         "silent": dept_stats.get("Sales",{}).get("total",15) - dept_stats.get("Sales",{}).get("active",0),
-         "est_containers": "~1,401", "est_missed": "~187", "priority": "High"},
-        {"dept": "SST",   "desc": f"{dept_stats.get('SST',{}).get('total',18) - dept_stats.get('SST',{}).get('active',0)} silent",
-         "silent": dept_stats.get("SST",{}).get("total",18) - dept_stats.get("SST",{}).get("active",0),
-         "est_containers": "~361", "est_missed": "~48", "priority": "Moderate"},
-    ]
+    # ── Opportunity table — COMPUTED (was hardcoded "~3,320"/"~442" strings) ──────
+    # For each department: how many containers its SILENT agents booked, and how many
+    # would have carried labor if they attached at the same rate as agents who already
+    # sell it. Benchmarks against active agents, not the overall roster — the roster
+    # rate includes the silent agents themselves and would understate the gap.
+    active_attach = None
+    if attach_detail.get("labor_containers") and total_containers_by_agent:
+        selling = {a["name"] for a in agents if a.get("booked", 0) > 0 and a["name"] != HAH_AGENT_NAME}
+        sell_ctr = sum(total_containers_by_agent.get(n, 0) for n in selling)
+        if sell_ctr:
+            active_attach = attach_detail["labor_containers"] / sell_ctr
+
+    opp_table = []
+    for dept, priority in (("OB", "Critical"), ("Sales", "High"), ("SST", "Moderate")):
+        ds = dept_stats.get(dept, {})
+        total, active = ds.get("total", 0), ds.get("active", 0)
+        silent = total - active
+        silent_names = [a["name"] for a in agents
+                        if a["dept"] == dept and a["quoted"] == 0 and a["name"] != HAH_AGENT_NAME]
+        silent_ctr = sum(total_containers_by_agent.get(n, 0) for n in silent_names)
+        missed = round(silent_ctr * active_attach) if active_attach else None
+        opp_table.append({
+            "dept": dept,
+            "desc": f"{silent} of {total} silent" if silent != total else f"All {total} silent",
+            "silent": silent,
+            "est_containers": f"{silent_ctr:,}" if silent_ctr else "—",
+            "est_missed": f"{missed:,}" if missed is not None else "—",
+            "priority": priority,
+        })
+    if active_attach:
+        print(f"  Opportunity table: benchmarked at {active_attach*100:.2f}% container attach "
+              f"(agents who already sell labor)")
 
     sales = dept_stats.get("Sales", {})
     sst   = dept_stats.get("SST",   {})
@@ -729,13 +1852,30 @@ const IL_DATA = {{
   // Cancel rate impact
   cancel_delta_7d:  {delta_7d},
   cancel_delta_30d: {delta_30d},
-  cancel_delta_primary_period: {primary_period},   // whichever window (7 or 30) has the larger-magnitude delta — drives savings
+  cancel_delta_primary_period: {primary_period},   // always 30 — more sample, less week-to-week whiplash than the 7-day window
   cancel_savings:   {savings},
-  annualized_savings:        {annualized},
-  projected_rollout_savings: "{projected_str}",
-  projected_rollout_agents:  220,
+  ecr:              {ECR},   // avg revenue from one container — converts saved containers to $
 
-  labor_attach_rate: 1.7,   // manual — update when Snowflake container denominator available
+  // 95% band on the 30-day delta and the savings that follow from it. Effective sample
+  // is labor ORDERS, not containers — containers on the same order cancel together.
+  cancel_range: {json.dumps(cancel_range, indent=2)},
+
+  // Cancel rate by BOOKING-MONTH cohort. The blended delta above hides drift —
+  // a strong early month keeps propping it up long after the effect has faded.
+  // mature=false means that month's orders haven't all had 30 days to cancel yet.
+  cancel_by_month: {json.dumps(by_month, indent=2)},
+
+  // Raw numbers behind each delta — powers the hover tooltips on the cancel cards.
+  cancel_detail_7d:  {json.dumps(detail_7d, indent=2)},
+  cancel_detail_30d: {json.dumps(detail_30d, indent=2)},
+  projected_rollout_savings: "{projected_str}",
+  projected_rollout_agents:  {ROLLOUT_TARGET_AGENTS},
+  projected_rollout_detail: {json.dumps(projected_detail, indent=2)},
+
+  // Computed, not manual. Distinct PODS orders with labor / all orders booked by roster
+  // agents, since launch. NOT maturity-filtered — attachment is known at booking.
+  labor_attach_rate: {attach_rate},
+  labor_attach_detail: {json.dumps(attach_detail, indent=2)},
 
   // Adoption
   active_agents: {active_agents},
@@ -793,54 +1933,91 @@ def main():
     orders_path = pick_file("Select HaH Orders CSV — cumulative since 5/1/26")
     print(f"  ✓ {os.path.basename(orders_path)}")
 
-    print("Select the Tableau Labor Impact Table CSV...")
-    tableau_csv_path = pick_file(
-        "Select Tableau Labor Impact Table CSV",
-        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-    )
-    print(f"  ✓ {os.path.basename(tableau_csv_path)}")
-
     # Process HaH CSVs
     print("\n[1/4] Processing HaH CSVs...")
-    q_by_agent, o_by_agent, all_hah_names = process_hah_csvs(quotes_path, orders_path)
+    quotes_export = read_csv_auto(quotes_path)
+    orders_df_raw = read_csv_auto(orders_path)
+    check_csv_freshness(quotes_export, orders_df_raw)
+
+    # Merge this week's export into the archive and work from full history, not the
+    # capped 1000-row export. Everything downstream (KPIs, trends, WoW, agent CSV)
+    # reads quotes_df_raw, so they all get the complete series.
+    quotes_df_raw = merge_quotes_archive(quotes_export)
+
+    roster_names = list(DEPT_MAP.keys())
+    orders_df_raw, reattr_stats = reattribute_hah_orders(quotes_df_raw, orders_df_raw, roster_names)
+    if reattr_stats["reattributed"]:
+        print(f"  Re-attributed {reattr_stats['reattributed']} HaH-touched order(s) to their originating "
+              f"PODS agent via PO#/CID match ({reattr_stats['unresolved']} unresolved, stay bucketed as HaH Agent)")
+
+    q_by_agent, o_by_agent, all_hah_names = process_hah_csvs(quotes_df_raw, orders_df_raw, end_date)
     print(f"  {len(all_hah_names)} unique agents across quotes + orders")
 
-    # Snowflake — total orders per agent for pitch rate
-    print("\n[2/4] Connecting to Snowflake for pitch rate (browser SSO will open)...")
+    # Build agent data
+    print("\n[2/4] Building agent data...")
+    prev_agents = load_existing_agents()
+    agents      = build_agents(q_by_agent, o_by_agent, all_hah_names, prev_agents)
+    active     = sum(1 for a in agents if a["quoted"] > 0)
+    total      = len(agents)
+    print(f"  {active} active / {total} total agents")
+
+    # Snowflake — total orders per agent, new-agent detection, and cancel rate
+    # (labor vs. regular, via the PO#/CID-then-OrderNumber join — see
+    # compute_cancel_rate_from_snowflake). This replaced the weekly Tableau
+    # "Labor Impact Table" CSV pull.
+    print("\n[3/4] Connecting to Snowflake (browser SSO will open)...")
     total_orders_by_agent = {}
+    total_containers_by_agent = {}
+    cancel_data = None
     try:
         conn = get_snowflake_conn(cfg)
         print("  Connected.")
-        total_orders_by_agent = q_total_orders_by_agent(conn, end_date)
-        print(f"  Total orders by agent: {len(total_orders_by_agent)} agents mapped")
+        directory = load_pods_employee_directory(conn)
+        agent_username_map = build_agent_username_map(directory, roster_names)
+        total_orders_by_agent, total_containers_by_agent = q_total_orders_by_agent(conn, end_date, agent_username_map)
+        print(f"  Total orders by agent: {len(total_orders_by_agent)} agents mapped "
+              f"(usernames resolved for {len(agent_username_map)}/{len(roster_names)} roster agents)")
+
+        print("  Checking for new PODS agents not yet in DEPT_MAP...")
+        new_agents, _ = detect_new_pods_agents(all_hah_names, directory, list(DEPT_MAP.keys()))
+        if new_agents:
+            print(f"\n  🆕 {len(new_agents)} NEW PODS AGENT(S) DETECTED — auto-classified for this run only:")
+            for name, info in sorted(new_agents.items()):
+                DEPT_MAP[name] = (info["dept"], info["loc"])
+                print(f'      "{name}": ("{info["dept"]}", "{info["loc"]}"),  # {info["email"]} | org: {info["organization"]}')
+            print("  ⚠ Review the dept/location guesses above (esp. Sales vs SST) and paste any that are")
+            print("    correct into DEPT_MAP in update_il_dashboard.py to make them permanent.")
+        else:
+            print("  No new PODS agents detected.")
+
+        print("  Checking roster spreadsheet for trained agents missing from DEPT_MAP...")
+        untracked = detect_untracked_trained_agents(list(DEPT_MAP.keys()))
+        if untracked:
+            print(f"\n  ⚠ {len(untracked)} agent(s) on the roster spreadsheet not in DEPT_MAP yet (dept unknown — fill in Sales/SST/OB):")
+            for a in sorted(untracked, key=lambda x: x["name"]):
+                sup = f" | supervisor: {a['supervisor']}" if a.get("supervisor") else ""
+                print(f'      "{a["name"]}": ("???", "{a["loc"]}"),  # {a["email"]}{sup} | from "{a["sheet"]}"')
+            print("  ⚠ Confirm department for each, then paste into DEPT_MAP in update_il_dashboard.py.")
+        else:
+            print("  No gaps found — DEPT_MAP matches the roster spreadsheet.")
+
+        print("\n[4/5] Computing cancel rate from Snowflake (PO#/CID join)...")
+        cancel_data = compute_cancel_rate_from_snowflake(conn, directory, roster_names, orders_df_raw, end_date)
+        print(f"  7d delta: {cancel_data['delta_7d']}pp | 30d delta: {cancel_data['delta_30d']}pp | savings: ${cancel_data['savings']:,}")
+
         conn.close()
     except Exception:
         import traceback
         traceback.print_exc()
-        print("  WARNING: Snowflake query failed — pitch rate will show 0")
+        print("  WARNING: Snowflake query failed — pitch rate will show 0, new-agent detection skipped")
 
-    # Build agent data
-    print("\n[3/4] Building agent data...")
-    prev_agents = load_existing_agents()
-    agents      = build_agents(q_by_agent, o_by_agent, all_hah_names, prev_agents)
-    dept_stats  = compute_dept_stats(agents, total_orders_by_agent)
-    active     = sum(1 for a in agents if a["quoted"] > 0)
-    total      = len(agents)
-    print(f"  {active} active / {total} total agents")
-    for dept, ds in dept_stats.items():
-        print(f"    {dept}: {ds['active']}/{ds['total']} active, {ds['quotes']} quotes, {ds['orders']} orders")
-
-    # Cancel rate from Tableau CSV (weighted by each agent's labor order count)
-    print("\n[4/5] Computing cancel rate from Tableau CSV...")
-    o_by_roster = {a["name"]: a["booked"] for a in agents}
-    try:
-        cancel_data = read_cancel_rate_from_tableau_csv(tableau_csv_path, o_by_roster)
-        print(f"  7d delta: {cancel_data['delta_7d']}pp | 30d delta: {cancel_data['delta_30d']}pp | savings: ${cancel_data['savings']:,}")
-    except Exception:
-        import traceback
-        traceback.print_exc()
+    if cancel_data is None:
         print("  Keeping existing cancel rate values from il_data.js")
         cancel_data = load_existing_cancel_data()
+
+    dept_stats = compute_dept_stats(agents, total_orders_by_agent)
+    for dept, ds in dept_stats.items():
+        print(f"    {dept}: {ds['active']}/{ds['total']} active, {ds['quotes']} quotes, {ds['orders']} orders")
 
     # Load previous totals for trajectory narrative
     prev_orders, prev_quotes, prev_savings, _, _ = load_prev_totals()
@@ -848,10 +2025,8 @@ def main():
 
     # Build weekly trends directly from date-filtered CSVs (no cumulative delta math)
     import pandas as pd
-    quotes_df_raw = read_csv_auto(quotes_path)
-    orders_df_raw = read_csv_auto(orders_path)
+    # quotes_df_raw / orders_df_raw already loaded + reattributed above
     # Rebuild hah_to_roster for weekly calc
-    roster_names = list(DEPT_MAP.keys())
     all_names_raw = set(quotes_df_raw.get("CSR_Name", pd.Series()).dropna()) | \
                     set(orders_df_raw.get("CSR_Name", pd.Series()).dropna())
     hah_to_roster_map = {}
@@ -869,12 +2044,17 @@ def main():
     for dept, dw in dept_wow.items():
         print(f"    {dept}: quotes {dw['quotes_prev']} -> {dw['quotes_cur']} | orders {dw['orders_prev']} -> {dw['orders_cur']}")
 
+    # Agent performance CSV (2x/week: Monday = Fri-Sun, Thursday = Mon-Thu)
+    print("\n  Building agent performance CSV...")
+    build_agent_performance_csv(quotes_df_raw, orders_df_raw, hah_to_roster_map, agents, end_date)
+
     # Generate content
     print("\n[5/5] Writing and pushing...")
     il_data_content = build_il_data_js(
         end_date, agents, dept_stats, cancel_data,
         weekly_trends, prev_orders, prev_quotes, prev_savings,
-        dept_wow, agent_wow
+        dept_wow, agent_wow,
+        total_containers_by_agent=total_containers_by_agent
     )
 
     # Write il_data.js locally
@@ -897,4 +2077,7 @@ def main():
     print(f"   GitHub: https://github.com/{GITHUB_REPO}/blob/main/il_data.js")
 
 if __name__ == "__main__":
-    main()
+    if "--backfill" in sys.argv:
+        backfill_quotes_archive()
+    else:
+        main()
