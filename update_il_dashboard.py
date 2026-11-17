@@ -377,123 +377,183 @@ def read_csv_auto(path):
     except UnicodeDecodeError:
         return pd.read_csv(path, encoding="utf-16")
 
-# ── Quotes archive ─────────────────────────────────────────────────────────────
-# The HaH quotes export is capped at 1000 rows and sorted newest-first, so it
-# silently drops the OLDEST quotes rather than erroring. At ~145 quotes/week that
-# is roughly seven weeks of history — which in Sep 2026 began cutting into the
-# 8-week trend chart, producing a week with more orders than quotes.
+# ── Quotes + orders archives ───────────────────────────────────────────────────
+# Both HaH exports are capped at 1000 rows and sorted newest-first, so they
+# silently drop the OLDEST rows rather than erroring (the export just ends with an
+# "Export limited to 1000 records" line). Quotes hit the cap in Sep 2026 at ~145/week,
+# which began cutting into the 8-week trend chart. Orders hit it in Nov 2026: the
+# export stopped reaching back to launch, so May/early-June orders vanished, agents
+# with early orders were pinned at their prior total by the never-go-below-prior
+# floor in build_agents, and the May cancel-rate cohort lost its labor side.
 #
-# Fix: keep every quote we have ever seen in a local archive keyed on Quote ID,
-# and read the dashboard off that instead of off one week's export. Safe to do
-# because the only quote fields this script uses — Quote ID and DateCreated — are
-# immutable. Mutable fields (Status, BookedCount) do go stale for quotes older
-# than the export window; nothing here reads them.
+# Fix: keep every row we have ever seen in a local archive keyed on its ID, and
+# read the dashboard off that instead of off one week's export. Fresh rows win on
+# ID collision, so anything still inside the export window keeps its latest values.
+#
+# Quotes: the only fields used — Quote ID and DateCreated — are immutable.
+# Orders: OrderStatus and CSR_Name CAN change after booking (cancellations, HaH mods),
+# and those changes stop arriving once an order ages out of the export window
+# (~5 months at current volume). That is still strictly better than dropping the
+# order outright, which is what the capped export alone does.
 QUOTES_ARCHIVE = os.path.join(LOCAL_DIR, "quotes_archive.csv")
 QUOTE_ID_COL   = "Quote ID"
 QUOTE_DATE_COL = "DateCreated"
 
-def _quote_dates(df):
-    return pd.to_datetime(df[QUOTE_DATE_COL], format="mixed", errors="coerce")
+ORDERS_ARCHIVE = os.path.join(LOCAL_DIR, "orders_archive.csv")
+ORDER_ID_COL   = "Order #"
+ORDER_DATE_COL = "Date Booked"
 
-def _clean_quotes(df, label):
-    """Drop rows with no Quote ID — trailing blank lines in the export."""
-    if QUOTE_ID_COL not in df.columns or QUOTE_DATE_COL not in df.columns:
-        print(f"  ⚠ {label}: missing '{QUOTE_ID_COL}' or '{QUOTE_DATE_COL}' column — cannot archive.")
+EXPORT_CAP_MARKER = "Export limited to"
+
+ARCHIVES = {
+    "quotes": {"path": QUOTES_ARCHIVE, "id": QUOTE_ID_COL, "date": QUOTE_DATE_COL,
+               "noun": "quotes", "flag": "--backfill"},
+    "orders": {"path": ORDERS_ARCHIVE, "id": ORDER_ID_COL, "date": ORDER_DATE_COL,
+               "noun": "orders", "flag": "--backfill-orders"},
+}
+
+def _archive_dates(df, spec):
+    return pd.to_datetime(df[spec["date"]], format="mixed", errors="coerce")
+
+def _archive_key(df, spec):
+    # One export can read IDs as int and the next as str (the cap footer forces the
+    # whole column to str), so normalize before de-duplicating.
+    return df[spec["id"]].astype(str).str.strip().str.replace(r"\.0$", "", regex=True)
+
+def export_was_capped(df):
+    """True if the export carries HaH's row-cap footer, i.e. older rows were cut off."""
+    head = df[df.columns[:2]].astype(str)
+    return bool(head.apply(lambda c: c.str.startswith(EXPORT_CAP_MARKER)).any().any())
+
+def _clean_archive_rows(df, spec, label):
+    """Drop rows with no ID and the export's cap-footer line."""
+    if spec["id"] not in df.columns or spec["date"] not in df.columns:
+        print(f"  ⚠ {label}: missing '{spec['id']}' or '{spec['date']}' column — cannot archive.")
         print(f"    Columns found: {list(df.columns)}")
         sys.exit(1)
-    out = df[df[QUOTE_ID_COL].notna()].copy()
+    ids = df[spec["id"]]
+    keep = ids.notna() & ~ids.astype(str).str.startswith(EXPORT_CAP_MARKER)
+    out = df[keep].copy()
     if len(out) < len(df):
-        print(f"  {label}: skipped {len(df) - len(out)} row(s) with no {QUOTE_ID_COL}")
+        print(f"  {label}: skipped {len(df) - len(out)} row(s) with no {spec['id']} (blank or cap-footer line)")
     return out
 
-def load_quotes_archive():
-    if not os.path.exists(QUOTES_ARCHIVE):
+def load_archive(kind):
+    spec = ARCHIVES[kind]
+    if not os.path.exists(spec["path"]):
         return None
-    return _clean_quotes(read_csv_auto(QUOTES_ARCHIVE), "Archive")
+    return _clean_archive_rows(read_csv_auto(spec["path"]), spec, f"{kind.title()} archive")
 
-def merge_quotes_archive(incoming_df, label="Quotes export", allow_gap=False):
-    """Upsert one quotes export into the archive and return the full history.
-
-    Fresh rows win on Quote ID collision, so anything still inside the export's
-    1000-row window keeps its latest values.
-    """
-    incoming = _clean_quotes(incoming_df, label)
-    archive  = load_quotes_archive()
+def merge_archive(kind, incoming_df, label=None, allow_gap=False):
+    """Upsert one export into the archive and return the full history."""
+    spec  = ARCHIVES[kind]
+    label = label or f"{kind.title()} export"
+    noun  = spec["noun"]
+    capped   = export_was_capped(incoming_df)
+    incoming = _clean_archive_rows(incoming_df, spec, label)
+    archive  = load_archive(kind)
+    i_dates  = _archive_dates(incoming, spec).dropna()
 
     if archive is None:
+        # A capped export doesn't reach back to launch, so seeding the archive from
+        # it alone would bake the missing history in permanently.
+        if capped and not allow_gap and not i_dates.empty and \
+                i_dates.min() > pd.Timestamp(LAUNCH_DATE) + pd.Timedelta(days=7):
+            print(f"\n  ⚠⚠⚠ NO {noun.upper()} ARCHIVE YET, AND THIS EXPORT IS CAPPED ⚠⚠⚠")
+            print(f"  It starts {i_dates.min():%Y-%m-%d}, not at launch ({LAUNCH_DATE}).")
+            print(f"  Seed the archive first from exports that together cover {LAUNCH_DATE} -> today")
+            print(f"  (each under 1000 rows, e.g. split by date range in the HaH portal):")
+            print(f"       python update_il_dashboard.py {spec['flag']}")
+            sys.exit(1)
         merged = incoming
-        d = _quote_dates(merged).dropna()
-        print(f"  Created quotes archive: {len(merged):,} quotes "
+        d = _archive_dates(merged, spec).dropna()
+        print(f"  Created {noun} archive: {len(merged):,} {noun} "
               f"({d.min():%Y-%m-%d} -> {d.max():%Y-%m-%d})")
     else:
-        a_dates, i_dates = _quote_dates(archive).dropna(), _quote_dates(incoming).dropna()
+        a_dates = _archive_dates(archive, spec).dropna()
         # The gap guard. The export reaches back a fixed NUMBER OF ROWS, not a fixed
         # date range, so skipping enough weeks means the newest export no longer
-        # touches the archive and the quotes in between are lost with no error.
+        # touches the archive and the rows in between are lost with no error.
         # Refuse rather than write a hole nobody can see afterwards.
         if not a_dates.empty and not i_dates.empty and i_dates.min() > a_dates.max():
             missing_days = (i_dates.min() - a_dates.max()).days
-            print(f"\n  ⚠⚠⚠ GAP IN QUOTE HISTORY ⚠⚠⚠")
+            print(f"\n  ⚠⚠⚠ GAP IN {noun.upper()[:-1]} HISTORY ⚠⚠⚠")
             print(f"  Archive ends   {a_dates.max():%Y-%m-%d}")
             print(f"  This export starts {i_dates.min():%Y-%m-%d}  ({missing_days} days later)")
             print(f"  The export is row-capped, so it no longer reaches back to the archive.")
-            print(f"  Quotes in that window would be lost silently.")
+            print(f"  {noun.title()} in that window would be lost silently.")
             print(f"  Fix: export the missing range separately, then run:")
-            print(f"       python update_il_dashboard.py --backfill")
+            print(f"       python update_il_dashboard.py {spec['flag']}")
             if not allow_gap:
                 sys.exit(1)
-            print(f"  (--backfill: proceeding anyway)\n")
+            print(f"  (backfill: proceeding anyway)\n")
 
         before = len(archive)
         # Incoming last so keep='last' lets fresh rows overwrite archived ones.
         merged = pd.concat([archive, incoming], ignore_index=True)
-        merged = merged.drop_duplicates(subset=[QUOTE_ID_COL], keep="last")
-        d = _quote_dates(merged).dropna()
-        print(f"  Quotes archive: {before:,} + {len(incoming):,} incoming "
+        merged = merged[~_archive_key(merged, spec).duplicated(keep="last")]
+        d = _archive_dates(merged, spec).dropna()
+        print(f"  {noun.title()} archive: {before:,} + {len(incoming):,} incoming "
               f"-> {len(merged):,} unique (+{len(merged) - before:,} new)")
         print(f"    history now spans {d.min():%Y-%m-%d} -> {d.max():%Y-%m-%d}")
 
-    merged = merged.sort_values(QUOTE_DATE_COL, key=lambda s: pd.to_datetime(s, format="mixed", errors="coerce"))
-    merged.to_csv(QUOTES_ARCHIVE, index=False, encoding="utf-8")
+    merged = merged.sort_values(spec["date"], key=lambda s: pd.to_datetime(s, format="mixed", errors="coerce"))
+    merged = merged.reset_index(drop=True)
+    merged.to_csv(spec["path"], index=False, encoding="utf-8")
     return merged
 
-def backfill_quotes_archive():
-    """One-time (or repeat) seeding of the archive from historical exports."""
+def merge_quotes_archive(incoming_df, label="Quotes export", allow_gap=False):
+    return merge_archive("quotes", incoming_df, label, allow_gap)
+
+def merge_orders_archive(incoming_df, label="Orders export", allow_gap=False):
+    return merge_archive("orders", incoming_df, label, allow_gap)
+
+def backfill_archive(kind, paths=None):
+    """One-time (or repeat) seeding of an archive from historical exports."""
+    spec, noun = ARCHIVES[kind], ARCHIVES[kind]["noun"]
     print("=" * 50)
-    print("  Quotes Archive Backfill")
+    print(f"  {noun.title()} Archive Backfill")
     print("=" * 50)
-    existing = load_quotes_archive()
+    existing = load_archive(kind)
     if existing is not None:
-        d = _quote_dates(existing).dropna()
-        print(f"\nCurrent archive: {len(existing):,} quotes "
+        d = _archive_dates(existing, spec).dropna()
+        print(f"\nCurrent archive: {len(existing):,} {noun} "
               f"({d.min():%Y-%m-%d} -> {d.max():%Y-%m-%d})")
     else:
         print("\nNo archive yet — this will create it.")
 
-    print("\nSelect one or more historical HaH Quotes CSVs (Ctrl+click for multiple)...")
-    root = tk.Tk(); root.attributes('-topmost', True); root.withdraw()
-    paths = filedialog.askopenfilenames(
-        parent=root, title="Select historical HaH Quotes CSV(s)",
-        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
-    root.destroy()
+    if not paths:
+        print(f"\nSelect one or more historical HaH {noun.title()} CSVs (Ctrl+click for multiple)...")
+        root = tk.Tk(); root.attributes('-topmost', True); root.withdraw()
+        paths = filedialog.askopenfilenames(
+            parent=root, title=f"Select historical HaH {noun.title()} CSV(s)",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
+        root.destroy()
     if not paths:
         print("Nothing selected — aborting.")
         sys.exit(1)
 
     # Oldest file first so the newest export's values win any collision.
-    ordered = sorted(paths, key=lambda p: _quote_dates(_clean_quotes(read_csv_auto(p), os.path.basename(p))).max())
+    ordered = sorted(paths, key=lambda p: _archive_dates(
+        _clean_archive_rows(read_csv_auto(p), spec, os.path.basename(p)), spec).max())
     for p in ordered:
         print(f"\n  Merging {os.path.basename(p)} ...")
-        merge_quotes_archive(read_csv_auto(p), os.path.basename(p), allow_gap=True)
+        merge_archive(kind, read_csv_auto(p), os.path.basename(p), allow_gap=True)
 
-    final = load_quotes_archive()
-    d = _quote_dates(final).dropna()
-    print(f"\n✅ Archive now holds {len(final):,} quotes ({d.min():%Y-%m-%d} -> {d.max():%Y-%m-%d})")
-    print(f"   {QUOTES_ARCHIVE}")
+    final = load_archive(kind)
+    d = _archive_dates(final, spec).dropna()
+    print(f"\n✅ Archive now holds {len(final):,} {noun} ({d.min():%Y-%m-%d} -> {d.max():%Y-%m-%d})")
+    print(f"   {spec['path']}")
     print("\n   Check for gaps in the month-by-month counts below — a month that")
     print("   dips sharply against its neighbours may mean a range was missed:")
-    for m, c in final.assign(_m=_quote_dates(final).dt.to_period("M")).groupby("_m").size().items():
+    for m, c in final.assign(_m=_archive_dates(final, spec).dt.to_period("M")).groupby("_m").size().items():
         print(f"     {m}  {c:>5,}")
+
+def backfill_quotes_archive():
+    backfill_archive("quotes")
+
+def backfill_orders_archive():
+    backfill_archive("orders")
 
 def last_sunday():
     today = datetime.now()
@@ -1939,10 +1999,11 @@ def main():
     orders_df_raw = read_csv_auto(orders_path)
     check_csv_freshness(quotes_export, orders_df_raw)
 
-    # Merge this week's export into the archive and work from full history, not the
-    # capped 1000-row export. Everything downstream (KPIs, trends, WoW, agent CSV)
-    # reads quotes_df_raw, so they all get the complete series.
+    # Merge this week's exports into the archives and work from full history, not the
+    # capped 1000-row exports. Everything downstream (KPIs, trends, WoW, agent CSV,
+    # cancel rate) reads quotes_df_raw / orders_df_raw, so they all get the complete series.
     quotes_df_raw = merge_quotes_archive(quotes_export)
+    orders_df_raw = merge_orders_archive(orders_df_raw)
 
     roster_names = list(DEPT_MAP.keys())
     orders_df_raw, reattr_stats = reattribute_hah_orders(quotes_df_raw, orders_df_raw, roster_names)
@@ -2077,7 +2138,9 @@ def main():
     print(f"   GitHub: https://github.com/{GITHUB_REPO}/blob/main/il_data.js")
 
 if __name__ == "__main__":
-    if "--backfill" in sys.argv:
+    if "--backfill-orders" in sys.argv:
+        backfill_orders_archive()
+    elif "--backfill" in sys.argv:
         backfill_quotes_archive()
     else:
         main()
